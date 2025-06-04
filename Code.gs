@@ -1,7 +1,8 @@
 // Danh sách thư mục ảnh (gallery)
 const GALLERIES = [
   { name: "PHI", id: "16laL6gC-FQ9h_sluaqampRB9DucBJ67C" },
-  { name: "PACKAGE", id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr" }
+  { name: "PACKAGE", id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr" },
+  { name: "CHC", id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle" }
 ];
 
 function doGet() {

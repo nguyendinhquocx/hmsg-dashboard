@@ -5,9 +5,7 @@ let images = [];
 let currentIdx = 0;
 let galleryList = [];
 let currentGallery = null;
-
-// Bộ nhớ tạm ảnh cho từng gallery, chỉ trên session này
-let galleryCache = {}; // { [galleryId]: [array of images] }
+let galleryCache = {};
 
 function showGalleryMenu() {
   const menuDiv = document.getElementById('galleryMenu');
@@ -18,52 +16,67 @@ function showGalleryMenu() {
     btn.className = 'gallery-menu-btn' + (gal.id === currentGallery ? ' active' : '');
     btn.onclick = () => {
       if (gal.id !== currentGallery) {
-        currentGallery = gal.id;
-        loadImages(currentGallery);
-        updateMenuActive();
+        animateBtn(btn);
+        switchGallery(gal.id);
       }
     };
+    btn.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') btn.click(); }
     menuDiv.appendChild(btn);
   });
+}
+
+function animateBtn(btn) {
+  btn.classList.add('clicked');
+  setTimeout(() => btn.classList.remove('clicked'), 250);
 }
 
 function updateMenuActive() {
   document.querySelectorAll('.gallery-menu-btn').forEach(btn => {
     if (btn.textContent === getGalleryName(currentGallery)) {
       btn.classList.add('active');
+      btn.setAttribute('tabindex', 0);
+      btn.focus();
     } else {
       btn.classList.remove('active');
+      btn.setAttribute('tabindex', -1);
     }
   });
 }
-
 function getGalleryName(galleryId) {
   const g = galleryList.find(g => g.id === galleryId);
   return g ? g.name : '';
 }
-
+function switchGallery(folderId) {
+  currentGallery = folderId;
+  updateMenuActive();
+  fadeOutIn('#gallery', () => loadImages(folderId));
+}
+function fadeOutIn(selector, cb) {
+  const el = document.querySelector(selector);
+  el.style.opacity = 0;
+  setTimeout(() => {
+    cb();
+    setTimeout(() => { el.style.opacity = 1; }, 60);
+  }, 180);
+}
 function loadImages(folderId) {
   images = [];
-  // Nếu đã cache thì lấy luôn, không gọi Apps Script nữa
   if (galleryCache[folderId]) {
     renderGallery(galleryCache[folderId]);
     return;
   }
-  document.getElementById('gallery').innerHTML = '<div>Đang tải ảnh...</div>';
+  document.getElementById('gallery').innerHTML = '<div style="text-align:center;color:#888;">Đang tải ảnh...</div>';
   google.script.run.withSuccessHandler(function(imgArr) {
-    // Lưu cache
     galleryCache[folderId] = imgArr;
     renderGallery(imgArr);
   }).getImages(folderId);
 }
-
-// Lấy danh sách gallery và khởi động
 google.script.run.withSuccessHandler(function(list){
   galleryList = list;
-  // Mặc định chọn gallery đầu tiên
   currentGallery = galleryList[0].id;
   showGalleryMenu();
   loadImages(currentGallery);
+  updateMenuActive();
 }).getGalleryList();
 
 function renderGallery(imgArr) {
@@ -71,7 +84,7 @@ function renderGallery(imgArr) {
   const gal = document.getElementById('gallery');
   gal.innerHTML = '';
   if (!imgArr.length) {
-    gal.innerHTML = "<i>Không có ảnh trong thư mục này.</i>";
+    gal.innerHTML = "<i style='color:#888;'>Không có ảnh trong thư mục này.</i>";
     return;
   }
   imgArr.forEach((url, idx) => {
@@ -117,16 +130,17 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') modal.classList.remove('open');
 });
 
-// Xuất PDF: mỗi trang 2 ảnh, căn giữa, có viền, trang đầu có tiêu đề không dấu
-document.getElementById('exportPDF').onclick = async function() {
+// Xuất PDF: có hiệu ứng nút
+const exportBtn = document.getElementById('exportPDF');
+exportBtn.onclick = async function() {
+  animateBtn(exportBtn);
   if (!images.length) return alert("Không có ảnh để xuất PDF!");
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 12; // lề mỗi phía
+  const margin = 12;
 
-  // Trang đầu: tiêu đề (không dấu)
   pdf.setFontSize(24);
   pdf.text("HMSG PKD", pageWidth/2, 24, {align:"center"});
   pdf.setFontSize(12);
@@ -139,14 +153,12 @@ document.getElementById('exportPDF').onclick = async function() {
       const img = new Image();
       img.src = images[i + j];
       await new Promise(resolve => { img.onload = resolve; });
-      // Tính toán kích thước phù hợp (nửa trang, trừ lề)
       const availHeight = (pageHeight - yStart - margin) / 2 - margin/2;
       const availWidth = pageWidth - 2 * margin;
       let ratio = Math.min(availWidth / img.width, availHeight / img.height, 1);
       let w = img.width * ratio;
       let h = img.height * ratio;
       let x = (pageWidth - w) / 2;
-      // Chuyển về base64 để add vào jsPDF
       const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = img.height;
@@ -160,27 +172,13 @@ document.getElementById('exportPDF').onclick = async function() {
 };
 </script>
 <style>
-/* Thêm CSS cho menu gallery */
-.gallery-menu {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px;
-  gap: 12px;
+/* Hiệu ứng click cho nút */
+.gallery-menu-btn.clicked, .export-btn.clicked {
+  box-shadow: 0 0 0 4px #b4c9fc44 !important;
+  transform: scale(.97);
+  transition: none;
 }
-.gallery-menu-btn {
-  padding: 8px 22px;
-  border: none;
-  border-radius: 6px;
-  background: #e3e6ee;
-  color: #222;
-  font-weight: bold;
-  font-size: 1.07rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  letter-spacing: 1px;
-}
-.gallery-menu-btn.active, .gallery-menu-btn:hover {
-  background: #1976d2;
-  color: #fff;
+#gallery {
+  transition: opacity .22s cubic-bezier(.6,-0.4,.3,1.3);
 }
 </style>
