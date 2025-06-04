@@ -1,0 +1,97 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+let images = [];
+let currentIdx = 0;
+
+// Lấy dữ liệu ảnh từ server
+google.script.run.withSuccessHandler(renderGallery).getImages();
+
+function renderGallery(imgArr) {
+  images = imgArr;
+  const gal = document.getElementById('gallery');
+  gal.innerHTML = '';
+  imgArr.forEach((url, idx) => {
+    const div = document.createElement('div');
+    div.className = 'img-card';
+    div.innerHTML = `<img src="${url}" alt="image" loading="lazy"/>`;
+    div.onclick = () => openModal(idx);
+    gal.appendChild(div);
+  });
+}
+
+// Modal logic
+function openModal(idx) {
+  currentIdx = idx;
+  const modal = document.getElementById('modal');
+  const modalImg = document.getElementById('modalImg');
+  modalImg.src = images[idx];
+  modal.classList.add('open');
+  updateArrowBtns();
+}
+function hideModal(e) {
+  if (e.target.id === "modal" || e.target.classList.contains('modal-img')) {
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+function nextImg(e) {
+  e.stopPropagation();
+  if (currentIdx < images.length - 1) openModal(currentIdx + 1);
+}
+function prevImg(e) {
+  e.stopPropagation();
+  if (currentIdx > 0) openModal(currentIdx - 1);
+}
+function updateArrowBtns() {
+  document.getElementById('prevBtn').style.display = currentIdx === 0 ? 'none' : 'flex';
+  document.getElementById('nextBtn').style.display = currentIdx === images.length - 1 ? 'none' : 'flex';
+}
+document.addEventListener('keydown', function(e) {
+  const modal = document.getElementById('modal');
+  if (!modal.classList.contains('open')) return;
+  if (e.key === 'ArrowRight') nextImg(e);
+  if (e.key === 'ArrowLeft') prevImg(e);
+  if (e.key === 'Escape') modal.classList.remove('open');
+});
+
+// Xuất PDF: mỗi trang 2 ảnh, căn giữa, có viền, trang đầu có tiêu đề không dấu
+document.getElementById('exportPDF').onclick = async function() {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 12; // lề mỗi phía
+
+  // Trang đầu: tiêu đề (không dấu)
+  pdf.setFontSize(24);
+  pdf.text("Bieu do tu Google Drive", pageWidth/2, 24, {align:"center"});
+  pdf.setFontSize(12);
+
+  let yStart = 40;
+  for (let i = 0; i < images.length; i += 2) {
+    if (i !== 0) pdf.addPage();
+    let y = yStart;
+    for (let j = 0; j < 2 && (i + j) < images.length; j++) {
+      const img = new Image();
+      img.src = images[i + j];
+      await new Promise(resolve => { img.onload = resolve; });
+      // Tính toán kích thước phù hợp (nửa trang, trừ lề)
+      const availHeight = (pageHeight - yStart - margin) / 2 - margin/2;
+      const availWidth = pageWidth - 2 * margin;
+      let ratio = Math.min(availWidth / img.width, availHeight / img.height, 1);
+      let w = img.width * ratio;
+      let h = img.height * ratio;
+      let x = (pageWidth - w) / 2;
+      // Chuyển về base64 để add vào jsPDF
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL("image/png");
+      pdf.addImage(dataUrl, "PNG", x, y, w, h);
+      y += h + margin;
+    }
+  }
+  pdf.save('gallery.pdf');
+};
+</script>

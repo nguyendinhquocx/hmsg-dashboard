@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('CSS'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Biểu đồ từ Google Drive</h1>
+      <div id="gallery" class="gallery"></div>
+      <button id="exportPDF" class="export-btn">Xuất PDF</button>
+    </div>
+    <!-- Modal xem ảnh lớn -->
+    <div class="modal" id="modal" onclick="hideModal(event)">
+      <img class="modal-img" id="modalImg"/>
+      <button id="prevBtn" class="arrow-btn left" onclick="prevImg(event)">&#8592;</button>
+      <button id="nextBtn" class="arrow-btn right" onclick="nextImg(event)">&#8594;</button>
+    </div>
+    <?!= include('JavaScript'); ?>
+  </body>
+</html>
