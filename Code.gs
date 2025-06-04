@@ -1,4 +1,8 @@
-const FOLDER_ID = '16laL6gC-FQ9h_sluaqampRB9DucBJ67C';
+// Danh sách thư mục ảnh (gallery)
+const GALLERIES = [
+  { name: "PHI", id: "16laL6gC-FQ9h_sluaqampRB9DucBJ67C" },
+  { name: "PACKAGE", id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr" }
+];
 
 function doGet() {
   return HtmlService.createTemplateFromFile('Index')
@@ -7,13 +11,19 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-// Hàm include cho phép import file HTML phụ
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-function getImages() {
-  const folder = DriveApp.getFolderById(FOLDER_ID);
+// Trả về danh sách gallery (tên + id)
+function getGalleryList() {
+  return GALLERIES.map(g => ({ name: g.name, id: g.id }));
+}
+
+// Lấy ảnh từ folderId truyền vào
+function getImages(folderId) {
+  if (!folderId) folderId = GALLERIES[0].id; // default: PHI
+  const folder = DriveApp.getFolderById(folderId);
   const files = folder.getFiles();
   let arr = [];
   while (files.hasNext()) {
@@ -29,8 +39,6 @@ function getImages() {
       });
     }
   }
-  // Sắp xếp theo tên file (tăng dần)
   arr.sort((a, b) => a.name.localeCompare(b.name, 'vi', { numeric: true }));
-  // Trả về mảng chỉ chứa url
   return arr.map(item => item.url);
 }

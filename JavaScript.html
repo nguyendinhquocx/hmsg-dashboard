@@ -3,14 +3,77 @@
 <script>
 let images = [];
 let currentIdx = 0;
+let galleryList = [];
+let currentGallery = null;
 
-// Lấy dữ liệu ảnh từ server
-google.script.run.withSuccessHandler(renderGallery).getImages();
+// Bộ nhớ tạm ảnh cho từng gallery, chỉ trên session này
+let galleryCache = {}; // { [galleryId]: [array of images] }
+
+function showGalleryMenu() {
+  const menuDiv = document.getElementById('galleryMenu');
+  menuDiv.innerHTML = '';
+  galleryList.forEach(gal => {
+    const btn = document.createElement('button');
+    btn.textContent = gal.name;
+    btn.className = 'gallery-menu-btn' + (gal.id === currentGallery ? ' active' : '');
+    btn.onclick = () => {
+      if (gal.id !== currentGallery) {
+        currentGallery = gal.id;
+        loadImages(currentGallery);
+        updateMenuActive();
+      }
+    };
+    menuDiv.appendChild(btn);
+  });
+}
+
+function updateMenuActive() {
+  document.querySelectorAll('.gallery-menu-btn').forEach(btn => {
+    if (btn.textContent === getGalleryName(currentGallery)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+function getGalleryName(galleryId) {
+  const g = galleryList.find(g => g.id === galleryId);
+  return g ? g.name : '';
+}
+
+function loadImages(folderId) {
+  images = [];
+  // Nếu đã cache thì lấy luôn, không gọi Apps Script nữa
+  if (galleryCache[folderId]) {
+    renderGallery(galleryCache[folderId]);
+    return;
+  }
+  document.getElementById('gallery').innerHTML = '<div>Đang tải ảnh...</div>';
+  google.script.run.withSuccessHandler(function(imgArr) {
+    // Lưu cache
+    galleryCache[folderId] = imgArr;
+    renderGallery(imgArr);
+  }).getImages(folderId);
+}
+
+// Lấy danh sách gallery và khởi động
+google.script.run.withSuccessHandler(function(list){
+  galleryList = list;
+  // Mặc định chọn gallery đầu tiên
+  currentGallery = galleryList[0].id;
+  showGalleryMenu();
+  loadImages(currentGallery);
+}).getGalleryList();
 
 function renderGallery(imgArr) {
   images = imgArr;
   const gal = document.getElementById('gallery');
   gal.innerHTML = '';
+  if (!imgArr.length) {
+    gal.innerHTML = "<i>Không có ảnh trong thư mục này.</i>";
+    return;
+  }
   imgArr.forEach((url, idx) => {
     const div = document.createElement('div');
     div.className = 'img-card';
@@ -20,7 +83,7 @@ function renderGallery(imgArr) {
   });
 }
 
-// Modal logic
+// Modal logic (không đổi)
 function openModal(idx) {
   currentIdx = idx;
   const modal = document.getElementById('modal');
@@ -56,6 +119,7 @@ document.addEventListener('keydown', function(e) {
 
 // Xuất PDF: mỗi trang 2 ảnh, căn giữa, có viền, trang đầu có tiêu đề không dấu
 document.getElementById('exportPDF').onclick = async function() {
+  if (!images.length) return alert("Không có ảnh để xuất PDF!");
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -64,7 +128,7 @@ document.getElementById('exportPDF').onclick = async function() {
 
   // Trang đầu: tiêu đề (không dấu)
   pdf.setFontSize(24);
-  pdf.text("Bieu do tu Google Drive", pageWidth/2, 24, {align:"center"});
+  pdf.text("HMSG PKD", pageWidth/2, 24, {align:"center"});
   pdf.setFontSize(12);
 
   let yStart = 40;
@@ -95,3 +159,28 @@ document.getElementById('exportPDF').onclick = async function() {
   pdf.save('gallery.pdf');
 };
 </script>
+<style>
+/* Thêm CSS cho menu gallery */
+.gallery-menu {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+.gallery-menu-btn {
+  padding: 8px 22px;
+  border: none;
+  border-radius: 6px;
+  background: #e3e6ee;
+  color: #222;
+  font-weight: bold;
+  font-size: 1.07rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 1px;
+}
+.gallery-menu-btn.active, .gallery-menu-btn:hover {
+  background: #1976d2;
+  color: #fff;
+}
+</style>
