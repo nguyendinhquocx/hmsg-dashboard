@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(120deg, #e3f0ff 0%, #b5d0fa 100%);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+    }
+    .login-box {
+      background: #fff;
+      padding: 38px 32px 28px 32px;
+      border-radius: 20px;
+      box-shadow: 0 6px 32px rgba(80,120,255,.12), 0 1.5px 0 #e6eeff;
+      min-width: 350px;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      animation: appear 0.45s cubic-bezier(.5,-0.1,.2,1.2);
+    }
+    @keyframes appear { from {opacity:0; transform: translateY(48px);} to {opacity:1; transform:none;}}
+    .login-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #1b377b;
+      margin-bottom: 12px;
+      letter-spacing: .5px;
+      text-align: center;
+    }
+    .login-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .login-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 13px 16px;
+      font-size: 1.09rem;
+      border-radius: 12px;
+      border: 1.5px solid #e2ecfa;
+      background: #f6faff;
+      outline: none;
+      transition: border 0.22s, box-shadow 0.22s;
+      box-shadow: 0 1px 0 #e2ecfa;
+      margin-bottom: 0;
+      /* Loại bỏ margin để dùng gap cho form */
+    }
+    .login-input:focus {
+      border: 1.7px solid #3091fd;
+      background: #fafdff;
+      box-shadow: 0 4px 16px rgba(50,145,253,0.09);
+    }
+    .login-btn {
+      width: 100%;
+      padding: 13px 0;
+      border-radius: 13px;
+      background: linear-gradient(90deg, #3091fd 0%, #47b9ff 100%);
+      color: #fff;
+      font-size: 1.18rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(48,145,253,0.10);
+      transition: background 0.18s, box-shadow 0.22s, transform 0.19s;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+    .login-btn:hover, .login-btn:focus {
+      background: linear-gradient(90deg, #47b9ff 0%, #3091fd 100%);
+      box-shadow: 0 5px 20px rgba(71,185,255,0.16);
+      transform: translateY(-1px) scale(1.025);
+    }
+    .login-error {
+      color: #e53935;
+      background: #fff3f1;
+      border-radius: 8px;
+      padding: 8px 12px;
+      width: 100%;
+      text-align: center;
+      font-size: 1.04rem;
+      margin-bottom: 4px;
+      border: 1.1px solid #ffe0de;
+      box-shadow: 0 1px 0 #ffe0de;
+      display: none;
+    }
+    .login-success {
+      color: #1976d2;
+      font-size: 1.13rem;
+      text-align: center;
+      margin-top: 18px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      background: #f2f9ff;
+      border-radius: 8px;
+      padding: 16px 8px 10px 8px;
+      box-shadow: 0 1px 0 #e2ecfa;
+      border: 1px solid #e2ecfa;
+      width: 100%;
+      line-height: 1.6;
+      animation: appear 0.6s;
+    }
+    @media (max-width: 550px) {
+      .login-box { min-width: unset; max-width: 96vw; padding: 22px 6vw 22px 6vw;}
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="login-title">Đăng nhập</div>
+    <div id="loginError" class="login-error"></div>
+    <form class="login-form" id="loginForm" autocomplete="off" onsubmit="login(event)">
+      <input type="text" id="username" class="login-input" placeholder="Tên đăng nhập" required autofocus>
+      <input type="password" id="password" class="login-input" placeholder="Mật khẩu" required>
+      <button class="login-btn" type="submit">Đăng nhập</button>
+    </form>
+    <div id="loginSuccessMsg" class="login-success" style="display:none"></div>
+  </div>
+  <script>
+  function login(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorDiv = document.getElementById('loginError');
+    errorDiv.style.display = "none";
+    google.script.run.withSuccessHandler(function(res){
+      if(res.success){
+        document.querySelector('.login-form').style.display = "none";
+        errorDiv.style.display = "none";
+        const msgDiv = document.getElementById('loginSuccessMsg');
+        msgDiv.innerHTML = `<span style="font-weight:600;">Đăng nhập thành công!</span><br>
+        <span style="color:#2173e7; font-weight:500;">
+        Vui lòng <b>tải lại trang (nhấn F5 hoặc Ctrl + R)</b> để vào hệ thống.
+        </span>`;
+        msgDiv.style.display = "block";
+      } else {
+        errorDiv.textContent = res.message || "Đăng nhập thất bại!";
+        errorDiv.style.display = "block";
+      }
+    }).login(username, password);
+  }
+  document.getElementById('loginForm').addEventListener('keydown', function(e){
+    if(e.key === "Enter") login(e);
+  });
+  </script>
+</body>
+</html>
