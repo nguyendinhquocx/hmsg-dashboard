@@ -3,254 +3,6 @@
   <head>
     <base target="_top">
     <?!= include('CSS'); ?>
-    <style>
-      :root {
-        --main-bg: #fff;
-        --main-fg: #222;
-        --border: #ececec;
-        --border2: #f3f3f3;
-        --accent: #1976d2;
-        --danger: #e53935;
-        --danger-bg: #fff2f1;
-        --gray: #f8f8f8;
-        --shadow: 0 2px 24px rgba(0,0,0,.05);
-        --radius: 18px;
-      }
-      html, body {
-        background: #fff !important;
-        color: var(--main-fg);
-        font-family: 'Segoe UI', Arial, sans-serif;
-        min-height: 100vh;
-        margin: 0;
-      }
-      .dashboard-header {
-        background: none !important;
-      }
-      .dashboard-title {
-        color: #222 !important;
-        text-shadow: none !important;
-        font-family: inherit;
-        font-weight: 600;
-      }
-      /* User profile top right */
-      .user-profile-box {
-        position: absolute;
-        top: 26px;
-        right: 42px;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        background: none;
-      }
-      .user-name {
-        font-weight: 500;
-        color: #111;
-        font-size: 1.08rem;
-        margin-right: 2px;
-        max-width: 160px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .user-avatar-btn {
-        background: none;
-        border: none;
-        padding: 0;
-        margin: 0;
-        cursor: pointer;
-        outline: none;
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-      .user-avatar-img {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        object-fit: cover;
-        box-shadow: 0 2px 8px rgba(100,100,100,.07);
-        border: 3px solid #fff;
-        outline: 1.5px solid #ddd;
-        background: #fff;
-        transition: box-shadow 0.18s, border 0.18s, outline 0.18s;
-      }
-      .user-avatar-btn:focus .user-avatar-img,
-      .user-avatar-btn:hover .user-avatar-img {
-        box-shadow: 0 3px 16px rgba(80,120,255,0.15);
-        outline: 2px solid var(--accent);
-      }
-      /* Minimal, modern dropdown */
-      .dropdown-menu {
-        display: none;
-        position: absolute;
-        top: 54px;
-        right: 0;
-        background: #fff;
-        border-radius: var(--radius);
-        min-width: 184px;
-        box-shadow: var(--shadow);
-        z-index: 999;
-        padding: 11px 0;
-        text-align: left;
-        border: 1.5px solid var(--border);
-        animation: fadein .18s;
-      }
-      .dropdown-menu.open {
-        display: block;
-      }
-      .dropdown-action-btn {
-        width: 100%;
-        background: none;
-        border: none;
-        text-align: left;
-        font-size: 1.05rem;
-        font-weight: 500;
-        color: #222;
-        padding: 11px 26px 11px 15px;
-        cursor: pointer;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        transition: background 0.13s, color 0.13s;
-      }
-      .dropdown-action-btn.logout {
-        color: var(--danger);
-        font-weight: 600;
-        background: none;
-      }
-      .dropdown-action-btn.logout:hover, .dropdown-action-btn.logout:focus {
-        background: var(--danger-bg);
-        color: #fff;
-        background: var(--danger);
-      }
-      .dropdown-action-btn:not(.logout):hover, 
-      .dropdown-action-btn:not(.logout):focus {
-        background: var(--gray);
-        color: var(--accent);
-      }
-      .dropdown-action-btn img {
-        width: 19px;
-        height: 19px;
-        margin-right: 2px;
-      }
-      .dropdown-divider {
-        margin: 3px 0 3px 0;
-        border: none;
-        border-top: 1px solid var(--border2);
-      }
-      /* Modal center forms */
-      .center-modal-bg {
-        display: none;
-        position: fixed;
-        z-index: 9999;
-        inset: 0;
-        background: rgba(0,0,0,0.15);
-        justify-content: center;
-        align-items: center;
-        animation: fadein .16s;
-      }
-      .center-modal-bg.open { display: flex; }
-      .center-modal-box {
-        background: #fff;
-        border-radius: var(--radius);
-        min-width: 330px;
-        max-width: 98vw;
-        min-height: 140px;
-        box-shadow: var(--shadow), 0 6px 24px rgba(0,0,0,.10);
-        padding: 30px 36px 28px 36px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        position: relative;
-        animation: fadein .17s;
-      }
-      .center-modal-title {
-        font-size: 1.18rem;
-        font-weight: 600;
-        color: #111;
-        margin-bottom: 8px;
-        letter-spacing: .3px;
-        text-align: center;
-      }
-      .center-modal-close {
-        position: absolute;
-        right: 15px; top: 15px;
-        background: none;
-        border: none;
-        font-size: 1.45rem;
-        color: #888;
-        cursor: pointer;
-        border-radius: 50%;
-        width: 32px; height: 32px;
-        transition: background 0.13s;
-      }
-      .center-modal-close:hover, .center-modal-close:focus {
-        background: #eee;
-        color: #111;
-      }
-      .modal-form-row {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin: 8px 0 0 0;
-        width: 100%;
-      }
-      .modal-input {
-        padding: 9px 11px;
-        border-radius: 9px;
-        border: 1.2px solid #e2ecfa;
-        background: #f6faff;
-        font-size: 1.09rem;
-        outline: none;
-        transition: border 0.16s;
-      }
-      .modal-input:focus {
-        border: 1.5px solid #3091fd;
-      }
-      .modal-submit-btn {
-        margin-top: 7px;
-        background: var(--accent);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 1.08rem;
-        font-weight: 700;
-        padding: 10px 0;
-        cursor: pointer;
-        transition: background 0.17s;
-      }
-      .modal-submit-btn:hover, .modal-submit-btn:focus {
-        background: #155fa0;
-      }
-      .modal-error {
-        color: var(--danger);
-        font-size: 0.98rem;
-        min-height: 19px;
-        margin: 2px 0 0 0;
-        text-align: center;
-      }
-      .modal-success {
-        color: #388e3c;
-        font-size: 0.98rem;
-        min-height: 19px;
-        margin: 2px 0 0 0;
-        text-align: center;
-      }
-      @keyframes fadein {
-        from { opacity:0; transform: scale(.97);}
-        to   { opacity:1; transform: none;}
-      }
-      @media (max-width: 600px) {
-        .user-profile-box { top: 12px; right: 2vw;}
-        .user-name { font-size: 0.98rem; max-width: 80px;}
-        .user-avatar-img { width: 34px; height: 34px;}
-        .dropdown-menu { min-width: 120px; }
-        .center-modal-box { min-width: 90vw; padding: 18px 7vw;}
-        .center-modal-title { font-size: 1.04rem;}
-      }
-    </style>
   </head>
   <body>
     <div class="dashboard-wrapper">
@@ -263,10 +15,9 @@
           <button class="user-avatar-btn" id="userAvatarBtn" aria-haspopup="true" aria-expanded="false" tabindex="0">
             <img class="user-avatar-img" id="userAvatarImg" src="" alt="Ảnh đại diện"/>
           </button>
-          <!-- Minimal dropdown -->
+          <!-- Dropdown -->
           <div class="dropdown-menu" id="profileDropdown" role="menu" aria-label="Tùy chọn tài khoản">
             <button class="dropdown-action-btn logout" id="dropdownLogoutBtn" tabindex="0">
-              <img src="https://cdn-icons-png.flaticon.com/128/10405/10405578.png" alt="logout" />
               Đăng xuất
             </button>
             <button class="dropdown-action-btn" id="dropdownChangePassBtn" tabindex="0">
@@ -280,10 +31,11 @@
       </div>
       <div class="dashboard-card">
         <div id="gallery" class="gallery"></div>
-        <button id="exportPDF" class="export-btn">Xuất PDF</button>
+        <button id="exportPDF" class="export-btn" style="display:none;">Xuất PDF</button>
       </div>
     </div>
-    <!-- Modal trung tâm: đổi mật khẩu -->
+    
+    <!-- Modal đổi mật khẩu -->
     <div class="center-modal-bg" id="modalChangePass" tabindex="-1">
       <div class="center-modal-box">
         <button class="center-modal-close" onclick="closeModal('modalChangePass')" aria-label="Đóng">&times;</button>
@@ -297,7 +49,8 @@
         </form>
       </div>
     </div>
-    <!-- Modal trung tâm: cập nhật avatar -->
+    
+    <!-- Modal cập nhật avatar -->
     <div class="center-modal-bg" id="modalChangeAvatar" tabindex="-1">
       <div class="center-modal-box">
         <button class="center-modal-close" onclick="closeModal('modalChangeAvatar')" aria-label="Đóng">&times;</button>
@@ -310,13 +63,16 @@
         </form>
       </div>
     </div>
+    
     <!-- Modal xem ảnh lớn -->
     <div class="modal" id="modal" onclick="hideModal(event)">
       <img class="modal-img" id="modalImg"/>
       <button id="prevBtn" class="arrow-btn left" onclick="prevImg(event)">&#8592;</button>
       <button id="nextBtn" class="arrow-btn right" onclick="nextImg(event)">&#8594;</button>
     </div>
+    
     <?!= include('JavaScript'); ?>
+    
     <script>
       // Hiển thị thông tin user
       function showUserProfile() {

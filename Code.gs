@@ -120,7 +120,6 @@ function getImages(folderId) {
   arr.sort((a, b) => a.name.localeCompare(b.name, 'vi', { numeric: true }));
   return arr.map(item => item.url);
 }
-// ... các hàm cũ giữ nguyên
 
 // Đổi mật khẩu
 function changePassword(oldPassword, newPassword) {
