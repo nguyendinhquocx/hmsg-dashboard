@@ -45,7 +45,8 @@ function login(username, password) {
           tenNhanVien: user['ten nhan vien'],
           phanQuyen: user['phan quyen'],
           hinhAnh: user['hinh anh'],
-          team: user['team']
+          team: user['team'],
+          email: user['mail hoan my'] // Thêm email
         }
       };
     }

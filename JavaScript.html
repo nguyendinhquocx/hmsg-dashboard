@@ -8,36 +8,33 @@ let currentGallery = null;
 let galleryCache = {};
 
 function showGalleryMenu() {
-  const menuDiv = document.getElementById('galleryMenu');
-  menuDiv.innerHTML = '';
+  const sidebarMenuDiv = document.getElementById('sidebarGalleryMenu');
+  
+  // Clear sidebar menu
+  sidebarMenuDiv.innerHTML = '';
+  
   galleryList.forEach(gal => {
-    const btn = document.createElement('button');
-    btn.textContent = gal.name;
-    btn.className = 'gallery-menu-btn' + (gal.id === currentGallery ? ' active' : '');
-    btn.onclick = () => {
+    // Sidebar menu item
+    const sidebarBtn = document.createElement('button');
+    sidebarBtn.textContent = gal.name;
+    sidebarBtn.className = 'sidebar-menu-item' + (gal.id === currentGallery ? ' active' : '');
+    sidebarBtn.onclick = () => {
       if (gal.id !== currentGallery) {
-        animateBtn(btn);
         switchGallery(gal.id);
+        // Không đóng sidebar như ChatGPT
       }
     };
-    btn.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') btn.click(); }
-    menuDiv.appendChild(btn);
+    sidebarMenuDiv.appendChild(sidebarBtn);
   });
 }
 
-function animateBtn(btn) {
-  btn.classList.add('clicked');
-  setTimeout(() => btn.classList.remove('clicked'), 180);
-}
-
 function updateMenuActive() {
-  document.querySelectorAll('.gallery-menu-btn').forEach(btn => {
+  // Update sidebar menu
+  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
     if (btn.textContent === getGalleryName(currentGallery)) {
       btn.classList.add('active');
-      btn.setAttribute('tabindex', 0);
     } else {
       btn.classList.remove('active');
-      btn.setAttribute('tabindex', -1);
     }
   });
 }
@@ -51,7 +48,6 @@ function switchGallery(folderId) {
   currentGallery = folderId;
   updateMenuActive();
   fadeOutIn('#gallery', () => {
-    // If cached, show directly, else load
     if (galleryCache[folderId]) {
       renderGallery(galleryCache[folderId]);
     } else {
@@ -60,7 +56,6 @@ function switchGallery(folderId) {
   });
 }
 
-// Animation for gallery swap
 function fadeOutIn(selector, cb) {
   const el = document.querySelector(selector);
   el.style.opacity = 0;
@@ -70,24 +65,20 @@ function fadeOutIn(selector, cb) {
   }, 120);
 }
 
-// Load images and cache
 function loadImages(folderId) {
   images = [];
   document.getElementById('exportPDF').style.display = "none";
   document.getElementById('gallery').innerHTML = `
     <div style='
       text-align:center;
-      color:#888;
+      color:#666;
       margin:30px auto;
-      padding:22px 0 18px 0;
-      font-size:1.17rem;
-      font-weight:400;
-      border-radius:18px;
-      background:#fff;
-      box-shadow:0 2px 24px rgba(0,0,0,.06);
-      width:240px;
-      border:1.7px solid #111;
-      display: flex; align-items: center; justify-content: center;
+      padding:20px;
+      font-size:14px;
+      border-radius:8px;
+      background:#f9f9f9;
+      border:1px solid #e5e5e5;
+      width:200px;
       '>
       Đang tải ảnh...
     </div>
@@ -102,12 +93,11 @@ function initGallery() {
   google.script.run.withSuccessHandler(function(list){
     galleryList = list;
     if (!galleryList.length) {
-      document.getElementById('galleryMenu').innerHTML = "<i style='color:#888;'>Không có gallery nào.</i>";
+      document.getElementById('sidebarGalleryMenu').innerHTML = "<div style='color:#666; text-align:center; padding:20px;'>Không có gallery nào.</div>";
       return;
     }
     currentGallery = galleryList[0].id;
     showGalleryMenu();
-    // Always check cache first
     if (galleryCache[currentGallery]) {
       renderGallery(galleryCache[currentGallery]);
     } else {
@@ -121,25 +111,26 @@ function renderGallery(imgArr) {
   images = imgArr;
   const gal = document.getElementById('gallery');
   gal.innerHTML = '';
+  
   if (!imgArr.length) {
-    gal.innerHTML = "<i style='color:#888;'>Không có ảnh trong thư mục này.</i>";
+    gal.innerHTML = "<div style='color:#666; text-align:center; padding:40px;'>Không có ảnh trong thư mục này.</div>";
     document.getElementById('exportPDF').style.display = "none";
     return;
   }
+  
   imgArr.forEach((url, idx) => {
     const div = document.createElement('div');
     div.className = 'img-card';
     div.innerHTML = `<img src="${url}" alt="image" loading="lazy"/>`;
-    // FIX: Đảm bảo modal hoạt động
     div.addEventListener('click', function() {
       openImageModal(idx);
     });
     gal.appendChild(div);
   });
-  document.getElementById('exportPDF').style.display = "inline-block";
+  
+  document.getElementById('exportPDF').style.display = "flex";
 }
 
-// FIX: Modal xem ảnh lớn - đổi tên để tránh conflict với modal settings
 function openImageModal(idx) {
   currentIdx = idx;
   const modal = document.getElementById('modal');
@@ -148,7 +139,6 @@ function openImageModal(idx) {
     modalImg.src = images[idx];
     modal.classList.add('open');
     updateArrowBtns();
-    // Prevent body scroll
     document.body.style.overflow = 'hidden';
   }
 }
@@ -196,16 +186,20 @@ window.addEventListener('DOMContentLoaded', function() {
 const exportBtn = document.getElementById('exportPDF');
 if (exportBtn) {
   exportBtn.onclick = async function() {
+    // Add clicked animation
+    exportBtn.classList.add('clicked');
+    setTimeout(() => exportBtn.classList.remove('clicked'), 100);
+    
     if (!images.length) return alert("Không có ảnh để xuất PDF!");
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 12;
-    pdf.setFontSize(22);
-    pdf.text("HMSG PKD", pageWidth/2, 23, {align:"center"});
-    pdf.setFontSize(11);
-    let yStart = 36;
+    pdf.setFontSize(18);
+    pdf.text("HMSG PKD", pageWidth/2, 20, {align:"center"});
+    pdf.setFontSize(10);
+    let yStart = 32;
     for (let i = 0; i < images.length; i += 2) {
       if (i !== 0) pdf.addPage();
       let y = yStart;
