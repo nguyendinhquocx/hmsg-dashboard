@@ -19,7 +19,7 @@
       box-shadow: 0 6px 32px rgba(80,120,255,.12), 0 1.5px 0 #e6eeff;
       min-width: 350px;
       width: 100%;
-      max-width: 380px;
+      max-width: 420px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -34,6 +34,27 @@
       margin-bottom: 12px;
       letter-spacing: .5px;
       text-align: center;
+      line-height: 1.1;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .login-title .greeting {
+      font-size: 2rem;
+      font-weight: 600;
+      color: #1b377b;
+      margin-bottom: 20px;
+      letter-spacing: 0.4px;
+    }
+    .login-title .fullname {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: #1b377b;
+      margin-top: 0;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+      line-height: 1.08;
     }
     .login-form {
       width: 100%;
@@ -54,7 +75,6 @@
       transition: border 0.22s, box-shadow 0.22s;
       box-shadow: 0 1px 0 #e2ecfa;
       margin-bottom: 0;
-      /* Loại bỏ margin để dùng gap cho form */
     }
     .login-input:focus {
       border: 1.7px solid #3091fd;
@@ -112,12 +132,14 @@
     }
     @media (max-width: 550px) {
       .login-box { min-width: unset; max-width: 96vw; padding: 22px 6vw 22px 6vw;}
+      .login-title .fullname { font-size: 1.5rem; }
+      .login-title .greeting { font-size: 1.2rem; }
     }
   </style>
 </head>
 <body>
   <div class="login-box">
-    <div class="login-title">Đăng nhập</div>
+    <div class="login-title" id="loginTitle">Đăng nhập</div>
     <div id="loginError" class="login-error"></div>
     <form class="login-form" id="loginForm" autocomplete="off" onsubmit="login(event)">
       <input type="text" id="username" class="login-input" placeholder="Tên đăng nhập" required autofocus>
@@ -137,6 +159,12 @@
       if(res.success){
         document.querySelector('.login-form').style.display = "none";
         errorDiv.style.display = "none";
+        // Đổi tiêu đề thành "Xin chào" + xuống dòng tên nhân viên, cân đối khoảng cách
+        if(res.user && res.user.tenNhanVien){
+          document.getElementById('loginTitle').innerHTML =
+            `<span class="greeting">Xin chào</span>
+             <span class="fullname">${res.user.tenNhanVien}</span>`;
+        }
         const msgDiv = document.getElementById('loginSuccessMsg');
         msgDiv.innerHTML = `<span style="font-weight:600;">Đăng nhập thành công!</span><br>
         <span style="color:#2173e7; font-weight:500;">
