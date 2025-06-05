@@ -71,14 +71,19 @@ function loadImages(folderId) {
     renderGallery(imgArr);
   }).getImages(folderId);
 }
-google.script.run.withSuccessHandler(function(list){
-  galleryList = list;
-  currentGallery = galleryList[0].id;
-  showGalleryMenu();
-  loadImages(currentGallery);
-  updateMenuActive();
-}).getGalleryList();
-
+function initGallery() {
+  google.script.run.withSuccessHandler(function(list){
+    galleryList = list;
+    if (!galleryList.length) {
+      document.getElementById('galleryMenu').innerHTML = "<i style='color:#888;'>Không có gallery nào.</i>";
+      return;
+    }
+    currentGallery = galleryList[0].id;
+    showGalleryMenu();
+    loadImages(currentGallery);
+    updateMenuActive();
+  }).getGalleryList();
+}
 function renderGallery(imgArr) {
   images = imgArr;
   const gal = document.getElementById('gallery');
@@ -170,15 +175,16 @@ exportBtn.onclick = async function() {
   }
   pdf.save('gallery.pdf');
 };
+
+// Đăng xuất động, không reload
+document.getElementById('logoutBtn')?.addEventListener('click', function(){
+  google.script.run.withSuccessHandler(function(res){
+    document.open();
+    document.write(res.html);
+    document.close();
+  }).logout();
+});
+
+// Khi load xong trang Index, khởi tạo menu + gallery
+window.addEventListener('DOMContentLoaded', initGallery);
 </script>
-<style>
-/* Hiệu ứng click cho nút */
-.gallery-menu-btn.clicked, .export-btn.clicked {
-  box-shadow: 0 0 0 4px #b4c9fc44 !important;
-  transform: scale(.97);
-  transition: none;
-}
-#gallery {
-  transition: opacity .22s cubic-bezier(.6,-0.4,.3,1.3);
-}
-</style>
