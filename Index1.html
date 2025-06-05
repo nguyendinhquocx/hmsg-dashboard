@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include('CSS'); ?>
+    <style>
+      .user-profile-box {
+        position: absolute;
+        top: 22px;
+        right: 38px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: none;
+      }
+      .user-name {
+        font-weight: 400;
+        color: #222;
+        font-size: 1.06rem;
+        margin-right: 2px;
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .user-avatar-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        outline: none;
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .user-avatar-img {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fff;
+        outline: 1px solid #e5e7eb;
+        background: #fff;
+        transition: box-shadow 0.13s, border 0.13s, outline 0.13s;
+      }
+      .user-avatar-btn:focus .user-avatar-img, .user-avatar-btn:hover .user-avatar-img {
+        outline: 1.7px solid #1976d2;
+      }
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 45px;
+        right: 0;
+        background: #fff;
+        border-radius: 14px;
+        min-width: 164px;
+        min-height: 10px;
+        box-shadow: 0 2px 24px rgba(0,0,0,.07);
+        z-index: 999;
+        padding: 3px 0 3px 0;
+        text-align: left;
+        border: 1px solid #e5e7eb;
+        animation: fadein .12s;
+      }
+      .dropdown-menu.open {
+        display: block;
+      }
+      .dropdown-action-btn {
+        width: 100%;
+        background: #fff;
+        border: 1.3px solid #fff;
+        text-align: left;
+        font-size: .98rem;
+        font-weight: 400;
+        color: #111;
+        padding: 8px 21px 8px 13px;
+        cursor: pointer;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        transition: background 0.13s, color 0.13s, border 0.13s;
+        margin: 0 7px 7px 7px;
+        outline: none;
+      }
+      .dropdown-action-btn:hover, .dropdown-action-btn:focus, .dropdown-action-btn.active {
+        background: #111 !important;
+        color: #fff !important;
+        border: 1.3px solid #111;
+      }
+      .center-modal-bg {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        inset: 0;
+        background: rgba(0,0,0,0.11);
+        justify-content: center;
+        align-items: center;
+        animation: fadein .14s;
+      }
+      .center-modal-bg.open { display: flex; }
+      .center-modal-box {
+        background: #fff;
+        border-radius: 14px;
+        min-width: 300px;
+        max-width: 98vw;
+        min-height: 110px;
+        box-shadow: 0 2px 24px rgba(0,0,0,.07), 0 6px 24px rgba(0,0,0,.08);
+        padding: 24px 18px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        animation: fadein .13s;
+      }
+      .center-modal-title {
+        font-size: .98rem;
+        font-weight: 400;
+        color: #111;
+        margin-bottom: 7px;
+        letter-spacing: .05px;
+        text-align: center;
+      }
+      .center-modal-close {
+        position: absolute;
+        right: 10px; top: 10px;
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        color: #888;
+        cursor: pointer;
+        border-radius: 50%;
+        width: 24px; height: 24px;
+        transition: background 0.13s;
+      }
+      .center-modal-close:hover, .center-modal-close:focus {
+        background: #f2f2f2;
+        color: #111;
+      }
+      .modal-form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 9px 0 0 0;
+        width: 100%;
+      }
+      .modal-input {
+        padding: 8px 10px;
+        border-radius: 7px;
+        border: 1px solid #e5e7eb;
+        background: #fcfcfc;
+        font-size: .98rem;
+        outline: none;
+        font-weight: 400;
+        transition: border 0.16s;
+        color: #111;
+      }
+      .modal-input:focus {
+        border: 1.3px solid #1976d2;
+      }
+      .modal-submit-btn {
+        margin-top: 6px;
+        background: #fff;
+        color: #111;
+        border: 1.3px solid #fff;
+        border-radius: 8px;
+        font-size: .98rem;
+        font-weight: 400;
+        padding: 8px 0;
+        cursor: pointer;
+        transition: background 0.13s, color 0.13s, border 0.13s;
+      }
+      .modal-submit-btn:hover, .modal-submit-btn:focus, .modal-submit-btn.active {
+        background: #111;
+        color: #fff;
+        border: 1.3px solid #111;
+      }
+      .modal-error {
+        color: #e53935;
+        font-size: 0.97rem;
+        min-height: 15px;
+        margin: 2px 0 0 0;
+        text-align: center;
+        font-weight: 400;
+      }
+      .modal-success {
+        color: #388e3c;
+        font-size: 0.97rem;
+        min-height: 15px;
+        margin: 2px 0 0 0;
+        text-align: center;
+        font-weight: 400;
+      }
+      @keyframes fadein {
+        from { opacity:0; transform: scale(.98);}
+        to   { opacity:1; transform: none;}
+      }
+      @media (max-width: 600px) {
+        .user-profile-box { top: 8px; right: 2vw;}
+        .user-name { font-size: 0.95rem; max-width: 85px;}
+        .user-avatar-img { width: 25px; height: 25px;}
+        .dropdown-menu { min-width: 90px; }
+        .center-modal-box { min-width: 90vw; padding: 11px 3vw;}
+        .center-modal-title { font-size: 0.95rem;}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <div class="dashboard-header">
+        <div class="dashboard-title">HMSG P.KD</div>
+        <div id="galleryMenu" class="gallery-menu"></div>
+        <div class="user-profile-box" id="userProfileBox" style="display:none;">
+          <div class="user-name" id="userName"></div>
+          <button class="user-avatar-btn" id="userAvatarBtn" aria-haspopup="true" aria-expanded="false" tabindex="0">
+            <img class="user-avatar-img" id="userAvatarImg" src="" alt="Ảnh đại diện"/>
+          </button>
+          <div class="dropdown-menu" id="profileDropdown" role="menu" aria-label="Tùy chọn tài khoản">
+            <button class="dropdown-action-btn" id="dropdownLogoutBtn" tabindex="0">Đăng xuất</button>
+            <button class="dropdown-action-btn" id="dropdownChangePassBtn" tabindex="0">Đổi mật khẩu</button>
+            <button class="dropdown-action-btn" id="dropdownChangeAvatarBtn" tabindex="0">Cập nhật avatar</button>
+          </div>
+        </div>
+      </div>
+    <div class="dashboard-card">
+      <div id="gallery" class="gallery"></div>
+      <button id="exportPDF" class="export-btn">Xuất PDF</button>
+    </div>
+    <!-- Modal đổi mật khẩu -->
+    <div class="center-modal-bg" id="modalChangePass" tabindex="-1">
+      <div class="center-modal-box">
+        <button class="center-modal-close" onclick="closeModal('modalChangePass')" aria-label="Đóng">&times;</button>
+        <div class="center-modal-title">Đổi mật khẩu</div>
+        <form class="modal-form-row" id="changePasswordForm" autocomplete="off">
+          <input class="modal-input" id="oldPassword" type="password" placeholder="Mật khẩu cũ" required>
+          <input class="modal-input" id="newPassword" type="password" placeholder="Mật khẩu mới" required>
+          <button class="modal-submit-btn" type="submit">Cập nhật</button>
+          <div class="modal-error" id="changePasswordError"></div>
+          <div class="modal-success" id="changePasswordSuccess"></div>
+        </form>
+      </div>
+    </div>
+    <!-- Modal cập nhật avatar -->
+    <div class="center-modal-bg" id="modalChangeAvatar" tabindex="-1">
+      <div class="center-modal-box">
+        <button class="center-modal-close" onclick="closeModal('modalChangeAvatar')" aria-label="Đóng">&times;</button>
+        <div class="center-modal-title">Cập nhật ảnh đại diện</div>
+        <form class="modal-form-row" id="changeAvatarForm" autocomplete="off">
+          <input class="modal-input" id="newAvatarUrl" type="url" placeholder="Dán URL hình ảnh" required>
+          <button class="modal-submit-btn" type="submit">Cập nhật</button>
+          <div class="modal-error" id="changeAvatarError"></div>
+          <div class="modal-success" id="changeAvatarSuccess"></div>
+        </form>
+      </div>
+    </div>
+    <!-- Modal xem ảnh lớn -->
+    <div class="modal" id="modal" onclick="hideModal(event)">
+      <img class="modal-img" id="modalImg"/>
+      <button id="prevBtn" class="arrow-btn left" onclick="prevImg(event)">&#8592;</button>
+      <button id="nextBtn" class="arrow-btn right" onclick="nextImg(event)">&#8594;</button>
+    </div>
+    <?!= include('JavaScript'); ?>
+    <script>
+      function showUserProfile() {
+        google.script.run.withSuccessHandler(function(user){
+          if(!user) return;
+          document.getElementById('userProfileBox').style.display = '';
+          document.getElementById('userName').textContent = user['ten nhan vien'] || '';
+          document.getElementById('userAvatarImg').src = user['hinh anh'] || '';
+        }).getCurrentUser();
+      }
+      function setupProfileDropdown() {
+        const avatarBtn = document.getElementById('userAvatarBtn');
+        const dropdown = document.getElementById('profileDropdown');
+        function closeDropdown() {
+          dropdown.classList.remove('open');
+          avatarBtn.setAttribute('aria-expanded','false');
+        }
+        avatarBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          dropdown.classList.toggle('open');
+          avatarBtn.setAttribute('aria-expanded', dropdown.classList.contains('open') ? 'true' : 'false');
+        });
+        document.addEventListener('click', function(e){
+          if (!dropdown.contains(e.target) && !avatarBtn.contains(e.target)) {
+            closeDropdown();
+          }
+        });
+        avatarBtn.addEventListener('keydown', function(e){
+          if(e.key === "Escape") closeDropdown();
+        });
+        dropdown.addEventListener('keydown', function(e){
+          if(e.key === "Escape") closeDropdown();
+        });
+        document.getElementById('dropdownLogoutBtn').addEventListener('click', function(){
+          google.script.run.withSuccessHandler(function(res){
+            document.open();
+            document.write(res.html);
+            document.close();
+          }).logout();
+        });
+        document.getElementById('dropdownChangePassBtn').addEventListener('click', function(){
+          openModal("modalChangePass");
+          closeDropdown();
+        });
+        document.getElementById('dropdownChangeAvatarBtn').addEventListener('click', function(){
+          openModal("modalChangeAvatar");
+          closeDropdown();
+        });
+      }
+      function openModal(id) {
+        document.getElementById(id).classList.add('open');
+        setTimeout(function() {
+          document.getElementById(id).focus();
+        }, 130);
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+      }
+      function setupChangePassword() {
+        const form = document.getElementById('changePasswordForm');
+        const errorDiv = document.getElementById('changePasswordError');
+        const successDiv = document.getElementById('changePasswordSuccess');
+        form.onsubmit = function(e) {
+          e.preventDefault();
+          errorDiv.textContent = "";
+          successDiv.textContent = "";
+          const oldPassword = document.getElementById('oldPassword').value.trim();
+          const newPassword = document.getElementById('newPassword').value.trim();
+          if (newPassword.length < 4) {
+            errorDiv.textContent = "Mật khẩu mới tối thiểu 4 ký tự!";
+            return;
+          }
+          google.script.run.withSuccessHandler(function(res){
+            if(res.success){
+              successDiv.textContent = "Đổi mật khẩu thành công!";
+              errorDiv.textContent = "";
+              form.reset();
+            } else {
+              errorDiv.textContent = res.message || "Đổi mật khẩu thất bại!";
+              successDiv.textContent = "";
+            }
+          }).changePassword(oldPassword, newPassword);
+        };
+      }
+      function setupChangeAvatar() {
+        const form = document.getElementById('changeAvatarForm');
+        const errorDiv = document.getElementById('changeAvatarError');
+        const successDiv = document.getElementById('changeAvatarSuccess');
+        form.onsubmit = function(e) {
+          e.preventDefault();
+          errorDiv.textContent = "";
+          successDiv.textContent = "";
+          const url = document.getElementById('newAvatarUrl').value.trim();
+          if(!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
+            errorDiv.textContent = "URL không hợp lệ hoặc không phải ảnh!";
+            return;
+          }
+          const img = new Image();
+          img.onload = function() {
+            google.script.run.withSuccessHandler(function(res){
+              if(res.success){
+                successDiv.textContent = "Cập nhật ảnh thành công!";
+                errorDiv.textContent = "";
+                document.getElementById('userAvatarImg').src = url;
+                form.reset();
+              } else {
+                errorDiv.textContent = res.message || "Cập nhật hình ảnh thất bại!";
+                successDiv.textContent = "";
+              }
+            }).changeAvatar(url);
+          };
+          img.onerror = function() {
+            errorDiv.textContent = "URL không hợp lệ hoặc ảnh không tồn tại!";
+          };
+          img.src = url;
+        };
+      }
+      document.addEventListener('keydown', function(e){
+        if(e.key === "Escape"){
+          document.querySelectorAll('.center-modal-bg.open').forEach(modal => modal.classList.remove('open'));
+        }
+      });
+      window.addEventListener('DOMContentLoaded', function() {
+        showUserProfile();
+        setupProfileDropdown();
+        setupChangePassword();
+        setupChangeAvatar();
+      });
+    </script>
+  </body>
+</html>
