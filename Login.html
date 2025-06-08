@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    :root {
+      --main-bg: #fff;
+      --main-fg: #111;
+      --border: #e5e5e5;
+      --black: #111;
+      --shadow: 0 1px 3px rgba(0,0,0,.1);
+      --radius: 8px;
+      --gray-light: #f9f9f9;
+      --gray-medium: #666;
+      --hover-bg: #f0f0f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: var(--gray-light);
+      color: var(--main-fg);
+      font-family: system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      background: var(--main-bg);
+      border-radius: 12px;
+      min-width: 320px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0,0,0,.1);
+      padding: 32px;
+      position: relative;
+      animation: slideUp .3s ease;
+    }
+
+    @keyframes slideUp {
+      from { 
+        transform: translateY(20px); 
+        opacity: 0;
+      }
+      to { 
+        transform: translateY(0); 
+        opacity: 1;
+      }
+    }
+
+    .login-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--main-fg);
+      margin-bottom: 24px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .login-input {
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--main-bg);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .login-input:focus {
+      border-color: var(--black);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
+
+    .login-input::placeholder {
+      color: var(--gray-medium);
+    }
+
+    .login-btn {
+      background: var(--black);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+
+    .login-btn:hover {
+      background: #333;
+    }
+
+    .login-btn:disabled {
+      background: var(--gray-medium);
+      cursor: not-allowed;
+    }
+
+    .login-error {
+      color: #dc3545;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .login-success {
+      color: #28a745;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: var(--radius);
+      border: 1px solid #d4edda;
+      display: none;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .success-highlight {
+      font-weight: 600;
+      color: var(--main-fg);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .success-instruction {
+      color: var(--gray-medium);
+      font-size: 13px;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 480px) {
+      .login-container {
+        min-width: unset;
+        margin: 0 16px;
+        padding: 24px;
+      }
+      
+      .login-title {
+        font-size: 1.25rem;
+      }
+    }
+
+    /* Loading state */
+    .loading {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    /* Hide form completely when successful */
+    .form-hidden {
+      display: none !important;
+    }
+
+    /* Success state - adjust title margin */
+    .success-state .login-title {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container" id="loginContainer">
+    <h1 class="login-title" id="loginTitle">Đăng nhập</h1>
+    
+    <form class="login-form" id="loginForm" autocomplete="off" onsubmit="login(event)">
+      <input 
+        type="text" 
+        id="username" 
+        class="login-input" 
+        placeholder="Tên đăng nhập" 
+        required 
+        autofocus
+      >
+      <input 
+        type="password" 
+        id="password" 
+        class="login-input" 
+        placeholder="Mật khẩu" 
+        required
+      >
+      <button class="login-btn" type="submit" id="loginBtn">
+        Đăng nhập
+      </button>
+    </form>
+    
+    <div id="loginError" class="login-error"></div>
+    
+    <div id="loginSuccess" class="login-success">
+      <span class="success-highlight">Đăng nhập thành công!</span>
+      <span class="success-instruction">
+        Vui lòng tải lại trang (nhấn F5 hoặc Ctrl + R) để vào hệ thống.
+      </span>
+    </div>
+  </div>
+
+  <script>
+    function login(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorDiv = document.getElementById('loginError');
+      const successDiv = document.getElementById('loginSuccess');
+      const loginBtn = document.getElementById('loginBtn');
+      const form = document.getElementById('loginForm');
+      const title = document.getElementById('loginTitle');
+      const container = document.getElementById('loginContainer');
+      
+      // Reset states
+      errorDiv.style.display = "none";
+      successDiv.style.display = "none";
+      
+      // Show loading state
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Đang đăng nhập...";
+      loginBtn.classList.add('loading');
+      
+      google.script.run
+        .withSuccessHandler(function(res) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = "Đăng nhập";
+          loginBtn.classList.remove('loading');
+          
+          if (res.success) {
+            // Update title if we have user info
+            if (res.user && res.user.tenNhanVien) {
+              title.textContent = `Xin chào, ${res.user.tenNhanVien}!`;
+            }
+            
+            // COMPLETELY hide the form (not just fade)
+            form.classList.add('form-hidden');
+            
+            // Add success state class to container
+            container.classList.add('success-state');
+            
+            // Show success message
+            successDiv.style.display = "block";
+            
+          } else {
+            errorDiv.textContent = res.message || "Đăng nhập thất bại!";
+            errorDiv.style.display = "block";
+          }
+        })
+        .withFailureHandler(function(error) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = "Đăng nhập";
+          loginBtn.classList.remove('loading');
+          errorDiv.textContent = "Có lỗi xảy ra, vui lòng thử lại!";
+          errorDiv.style.display = "block";
+          console.error('Login error:', error);
+        })
+        .login(username, password);
+    }
+
+    // Enter key handling
+    document.addEventListener('keydown', function(e) {
+      if (e.key === "Enter" && document.activeElement.tagName === 'INPUT') {
+        e.preventDefault();
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      }
+    });
+
+    // Auto focus on username field
+    window.addEventListener('load', function() {
+      document.getElementById('username').focus();
+    });
+  </script>
+</body>
+</html>
