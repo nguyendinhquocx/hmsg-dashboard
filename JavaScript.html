@@ -22,6 +22,7 @@ function renderGalleryNav() {
   });
 }
 
+// GROK-STYLE SIDEBAR MENU: icon only với tooltip
 function showGalleryMenu() {
   const sidebarMenuDiv = document.getElementById('sidebarGalleryMenu');
   
@@ -29,21 +30,19 @@ function showGalleryMenu() {
   sidebarMenuDiv.innerHTML = '';
   
   galleryList.forEach(gal => {
-    // Sidebar menu item với icon (chữ cái đầu)
+    // Sidebar menu item GROK style - chỉ icon
     const sidebarBtn = document.createElement('button');
     sidebarBtn.className = 'sidebar-menu-item' + (gal.id === currentGallery ? ' active' : '');
-    sidebarBtn.setAttribute('data-icon', gal.name.charAt(0)); // Chữ cái đầu làm icon
+    sidebarBtn.setAttribute('data-tooltip', gal.name); // Tooltip hiển thị tên
+    
+    // Icon là chữ cái đầu tiên
+    sidebarBtn.textContent = gal.name.charAt(0).toUpperCase();
+    
     sidebarBtn.onclick = () => {
       if (gal.id !== currentGallery) {
         switchGallery(gal.id);
       }
     };
-    
-    // Thêm text
-    const textSpan = document.createElement('span');
-    textSpan.className = 'sidebar-menu-text';
-    textSpan.textContent = gal.name;
-    sidebarBtn.appendChild(textSpan);
     
     sidebarMenuDiv.appendChild(sidebarBtn);
   });
@@ -60,9 +59,8 @@ function updateMenuActive() {
   });
   
   // Update sidebar menu
-  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
-    const textSpan = btn.querySelector('.sidebar-menu-text');
-    if (textSpan && textSpan.textContent === getGalleryName(currentGallery)) {
+  document.querySelectorAll('.sidebar-menu-item').forEach((btn, index) => {
+    if (galleryList[index] && galleryList[index].id === currentGallery) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
