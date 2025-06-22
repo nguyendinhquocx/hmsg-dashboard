@@ -6,7 +6,8 @@
   --black: #111;
   --shadow: 0 1px 3px rgba(0,0,0,.1);
   --radius: 8px;
-  --sidebar-width: 260px;
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 64px;
   --header-height: 64px;
   --gray-light: #f9f9f9;
   --gray-medium: #666;
@@ -26,100 +27,164 @@ body {
   overflow-x: hidden;
 }
 
-/* Layout chính - Push content instead of overlay */
+/* Layout chính */
 .app-container {
   display: flex;
   min-height: 100vh;
-  transition: margin-left 0.3s ease;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: var(--sidebar-collapsed-width);
 }
 
-.app-container.sidebar-open {
-  margin-left: var(--sidebar-width);
-}
-
-/* Sidebar - Fixed position but pushes content */
+/* Sidebar kiểu Gemini - collapsed by default */
 .sidebar {
-  width: var(--sidebar-width);
+  width: var(--sidebar-collapsed-width);
   background: var(--gray-light);
   border-right: 1px solid var(--border);
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.sidebar.open {
-  transform: translateX(0);
+.sidebar:hover {
+  width: var(--sidebar-width);
+  box-shadow: 4px 0 20px rgba(0,0,0,0.08);
 }
 
+/* Sidebar header với hamburger menu */
 .sidebar-header {
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.sidebar-close-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: center;
+  border-bottom: 1px solid var(--border);
+  padding: 0;
 }
 
-.sidebar-close-btn:hover {
+.sidebar-toggle-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  color: var(--gray-medium);
+}
+
+.sidebar-toggle-icon:hover {
   background: var(--hover-bg);
+  color: var(--black);
 }
 
-.sidebar-close-btn img {
-  width: 18px;
-  height: 18px;
+/* Hamburger icon CSS */
+.hamburger {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  transform: rotate(0deg);
+  transition: 0.3s ease-in-out;
+  cursor: pointer;
 }
 
+.hamburger span {
+  display: block;
+  position: absolute;
+  height: 2px;
+  width: 100%;
+  background: currentColor;
+  border-radius: 1px;
+  opacity: 1;
+  left: 0;
+  transform: rotate(0deg);
+  transition: 0.25s ease-in-out;
+}
+
+.hamburger span:nth-child(1) { top: 6px; }
+.hamburger span:nth-child(2) { top: 12px; }
+.hamburger span:nth-child(3) { top: 18px; }
+
+/* Sidebar content */
 .sidebar-content {
-  padding: 20px 0;
   flex: 1;
+  padding: 16px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.sidebar-section {
-  margin-bottom: 24px;
-}
-
+/* Gallery menu items - kiểu Gemini */
 .sidebar-menu-item {
   display: flex;
   align-items: center;
-  padding: 10px 20px;
-  color: var(--main-fg);
+  padding: 12px 20px;
+  margin: 2px 12px;
+  color: var(--gray-medium);
   text-decoration: none;
   font-size: 14px;
-  transition: background 0.2s;
+  font-weight: 400;
+  transition: all 0.2s;
   border: none;
   background: none;
-  width: 100%;
+  width: calc(100% - 24px);
   text-align: left;
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 24px;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
 }
 
 .sidebar-menu-item:hover {
   background: var(--hover-bg);
+  color: var(--black);
 }
 
-/* Bỏ background đen cho active state như ChatGPT */
 .sidebar-menu-item.active {
-  background: var(--hover-bg);
-  color: var(--main-fg);
+  background: #e3f2fd;
+  color: #1976d2;
   font-weight: 500;
+}
+
+/* Menu item icon (chữ cái đầu) */
+.sidebar-menu-item::before {
+  content: attr(data-icon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gray-medium);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  margin-right: 12px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.sidebar-menu-item.active::before {
+  background: #1976d2;
+}
+
+/* Menu text ẩn khi collapsed */
+.sidebar-menu-text {
+  opacity: 0;
+  transition: opacity 0.2s;
+  transition-delay: 0s;
+}
+
+.sidebar:hover .sidebar-menu-text {
+  opacity: 1;
+  transition-delay: 0.1s;
 }
 
 /* Email footer */
@@ -130,19 +195,30 @@ body {
   font-size: 12px;
   color: var(--gray-medium);
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-/* Header - KHÔNG fixed, scroll cùng content */
+.sidebar-footer-text {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sidebar:hover .sidebar-footer-text {
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+
+/* Header */
 .app-header {
-  /* Bỏ position: fixed */
   width: 100%;
   height: var(--header-height);
   background: var(--main-bg);
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 24px;
   z-index: 999;
-  /* Bỏ transition left */
+  border-bottom: 1px solid var(--border);
 }
 
 .header-left {
@@ -151,29 +227,8 @@ body {
   gap: 16px;
 }
 
-.sidebar-toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 10px;
-  border-radius: 8px;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar-toggle-btn:hover {
-  background: var(--hover-bg);
-}
-
-.sidebar-toggle-btn img {
-  width: 20px;
-  height: 20px;
-}
-
 .app-title {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   font-weight: 600;
   color: var(--main-fg);
   margin: 0;
@@ -240,13 +295,77 @@ body {
 .main-content {
   flex: 1;
   padding: 24px;
-  /* Bỏ margin-top */
-  /* Bỏ min-height calc */
 }
 
-/* Ẩn gallery menu ngoài */
-.gallery-menu {
-  display: none;
+/* Gallery Navigation Container */
+.gallery-nav-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 24px 0;
+  margin-bottom: 8px;
+}
+
+/* Gallery Navigation */
+.gallery-nav {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.gallery-nav-btn {
+  background: none;
+  border: none;
+  color: var(--gray-medium);
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.gallery-nav-btn:hover {
+  color: var(--black);
+  background: var(--hover-bg);
+}
+
+.gallery-nav-btn.active {
+  color: #1976d2;
+  background: #e3f2fd;
+  font-weight: 600;
+}
+
+/* Refresh Gallery Button */
+.refresh-gallery-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--gray-medium);
+  font-size: 1rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.refresh-gallery-btn:hover {
+  background: var(--hover-bg);
+  color: var(--black);
+  border-color: var(--black);
+}
+
+.refresh-gallery-btn.loading {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Gallery content */
@@ -255,7 +374,7 @@ body {
   margin: 0 auto;
   background: var(--main-bg);
   border-radius: 12px;
-  padding: 24px;
+  padding: 32px;
   position: relative;
 }
 
@@ -304,10 +423,10 @@ body {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: var(--black);
+  background: #1976d2;
   color: white;
   border: none;
   cursor: pointer;
@@ -316,19 +435,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(25,118,210,0.3);
   z-index: 100;
 }
 
 .export-btn img {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   filter: invert(1);
 }
 
 .export-btn:hover {
-  background: #333;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  background: #1565c0;
+  box-shadow: 0 6px 20px rgba(25,118,210,0.4);
   transform: scale(1.05);
 }
 
@@ -336,13 +455,13 @@ body {
 .export-btn::after {
   content: 'Download PDF';
   position: absolute;
-  bottom: 60px;
+  bottom: 70px;
   right: 50%;
   transform: translateX(50%);
   background: rgba(0,0,0,0.8);
   color: white;
-  padding: 6px 8px;
-  border-radius: 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
   font-size: 12px;
   white-space: nowrap;
   opacity: 0;
@@ -419,8 +538,8 @@ body {
   right: 0;
   background: var(--main-bg);
   border-radius: var(--radius);
-  min-width: 120px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  min-width: 140px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.15);
   z-index: 999;
   padding: 8px 0;
   text-align: left;
@@ -437,10 +556,10 @@ body {
   background: none;
   border: none;
   text-align: left;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--main-fg);
-  padding: 8px 12px;
+  padding: 10px 16px;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -450,11 +569,11 @@ body {
 }
 
 .dropdown-action-btn.logout {
-  color: #dc3545;
+  color: #d32f2f;
 }
 
 .dropdown-action-btn.logout:hover {
-  background: #fff5f5;
+  background: #ffebee;
 }
 
 /* Modal forms */
@@ -539,13 +658,13 @@ body {
 }
 
 .modal-input:focus {
-  border-color: var(--black);
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25,118,210,0.1);
 }
 
 .modal-submit-btn {
   margin-top: 8px;
-  background: var(--black);
+  background: #1976d2;
   color: white;
   border: none;
   border-radius: var(--radius);
@@ -557,18 +676,18 @@ body {
 }
 
 .modal-submit-btn:hover {
-  background: #333;
+  background: #1565c0;
 }
 
 .modal-error {
-  color: #dc3545;
+  color: #d32f2f;
   font-size: 13px;
   margin-top: 8px;
   text-align: center;
 }
 
 .modal-success {
-  color: #28a745;
+  color: #2e7d32;
   font-size: 13px;
   margin-top: 8px;
   text-align: center;
@@ -576,12 +695,27 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .app-container.sidebar-open {
+  .app-container {
     margin-left: 0;
   }
   
-  .header-left {
-    gap: 12px;
+  .sidebar {
+    width: 0;
+    transform: translateX(-100%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .sidebar.open {
+    width: var(--sidebar-width);
+    transform: translateX(0);
+  }
+  
+  .sidebar:hover {
+    width: 0;
+  }
+  
+  .sidebar.open:hover {
+    width: var(--sidebar-width);
   }
   
   .app-title {
@@ -597,7 +731,22 @@ body {
   }
   
   .dashboard-card {
-    padding: 16px;
+    padding: 20px;
+  }
+  
+  .gallery-nav-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .gallery-nav {
+    flex-wrap: wrap;
+  }
+  
+  .gallery-nav-btn {
+    font-size: 0.9rem;
+    padding: 8px 14px;
   }
   
   .modal-img {
@@ -614,14 +763,8 @@ body {
   .export-btn {
     bottom: 16px;
     right: 16px;
-    width: 44px;
-    height: 44px;
-  }
-  
-  /* Mobile dropdown adjustment */
-  .dropdown-menu {
-    top: 44px;
-    min-width: 110px;
+    width: 52px;
+    height: 52px;
   }
   
   /* Sidebar overlay on mobile */
@@ -656,7 +799,7 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--gray-light);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
@@ -664,5 +807,10 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray-medium);
+}
+
+/* Remove default hamburger button from header */
+.sidebar-toggle-btn {
+  display: none;
 }
 </style>
