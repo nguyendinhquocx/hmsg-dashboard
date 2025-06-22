@@ -7,6 +7,21 @@ let galleryList = [];
 let currentGallery = null;
 let galleryCache = {};
 
+// Render gallery navigation on top
+function renderGalleryNav() {
+  const nav = document.getElementById('galleryNav');
+  nav.innerHTML = '';
+  galleryList.forEach(gal => {
+    const btn = document.createElement('button');
+    btn.textContent = gal.name;
+    btn.className = 'gallery-nav-btn' + (gal.id === currentGallery ? ' active' : '');
+    btn.onclick = () => {
+      if (gal.id !== currentGallery) switchGallery(gal.id);
+    };
+    nav.appendChild(btn);
+  });
+}
+
 function showGalleryMenu() {
   const sidebarMenuDiv = document.getElementById('sidebarGalleryMenu');
   
@@ -14,24 +29,40 @@ function showGalleryMenu() {
   sidebarMenuDiv.innerHTML = '';
   
   galleryList.forEach(gal => {
-    // Sidebar menu item
+    // Sidebar menu item với icon (chữ cái đầu)
     const sidebarBtn = document.createElement('button');
-    sidebarBtn.textContent = gal.name;
     sidebarBtn.className = 'sidebar-menu-item' + (gal.id === currentGallery ? ' active' : '');
+    sidebarBtn.setAttribute('data-icon', gal.name.charAt(0)); // Chữ cái đầu làm icon
     sidebarBtn.onclick = () => {
       if (gal.id !== currentGallery) {
         switchGallery(gal.id);
-        // Không đóng sidebar như ChatGPT
       }
     };
+    
+    // Thêm text
+    const textSpan = document.createElement('span');
+    textSpan.className = 'sidebar-menu-text';
+    textSpan.textContent = gal.name;
+    sidebarBtn.appendChild(textSpan);
+    
     sidebarMenuDiv.appendChild(sidebarBtn);
   });
 }
 
 function updateMenuActive() {
+  // Update top navigation
+  document.querySelectorAll('.gallery-nav-btn').forEach(btn => {
+    if (btn.textContent === getGalleryName(currentGallery)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
   // Update sidebar menu
   document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
-    if (btn.textContent === getGalleryName(currentGallery)) {
+    const textSpan = btn.querySelector('.sidebar-menu-text');
+    if (textSpan && textSpan.textContent === getGalleryName(currentGallery)) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
@@ -86,6 +117,9 @@ function loadImages(folderId) {
   google.script.run.withSuccessHandler(function(imgArr) {
     galleryCache[folderId] = imgArr;
     renderGallery(imgArr);
+    // Remove loading state from refresh button
+    const refreshBtn = document.getElementById('refreshGalleryBtn');
+    if (refreshBtn) refreshBtn.classList.remove('loading');
   }).getImages(folderId);
 }
 
@@ -93,10 +127,12 @@ function initGallery() {
   google.script.run.withSuccessHandler(function(list){
     galleryList = list;
     if (!galleryList.length) {
+      document.getElementById('galleryNav').innerHTML = "<div style='color:#666; text-align:center; padding:20px;'>Không có gallery nào.</div>";
       document.getElementById('sidebarGalleryMenu').innerHTML = "<div style='color:#666; text-align:center; padding:20px;'>Không có gallery nào.</div>";
       return;
     }
     currentGallery = galleryList[0].id;
+    renderGalleryNav();
     showGalleryMenu();
     if (galleryCache[currentGallery]) {
       renderGallery(galleryCache[currentGallery]);
@@ -167,6 +203,21 @@ function updateArrowBtns() {
   if (nextBtn) nextBtn.style.display = currentIdx === images.length - 1 ? 'none' : 'flex';
 }
 
+// Setup refresh gallery button
+function setupRefreshButton() {
+  const refreshBtn = document.getElementById('refreshGalleryBtn');
+  if (refreshBtn) {
+    refreshBtn.onclick = function() {
+      this.classList.add('loading');
+      // Clear cache for current gallery
+      if (currentGallery) {
+        delete galleryCache[currentGallery];
+        loadImages(currentGallery);
+      }
+    };
+  }
+}
+
 document.addEventListener('keydown', function(e) {
   const modal = document.getElementById('modal');
   if (!modal || !modal.classList.contains('open')) return;
@@ -180,6 +231,7 @@ document.addEventListener('keydown', function(e) {
 
 window.addEventListener('DOMContentLoaded', function() {
   initGallery();
+  setupRefreshButton();
 });
 
 // PDF Export
