@@ -8,7 +8,7 @@
     <!-- Sidebar overlay for mobile only -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
     
-    <!-- Sidebar kiểu Gemini -->
+    <!-- Sidebar kiểu Grok -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <button class="sidebar-toggle-icon" onclick="toggleSidebar()" title="Menu">
@@ -26,10 +26,7 @@
         </div>
       </div>
       
-      <!-- Email footer -->
-      <div class="sidebar-footer">
-        <div class="sidebar-footer-text" id="userEmail">mail hoan my</div>
-      </div>
+      <!-- EMAIL FOOTER REMOVED COMPLETELY -->
     </div>
     
     <!-- App Container -->
@@ -76,10 +73,8 @@
           <!-- Dashboard Card -->
           <div class="dashboard-card">
             <div id="gallery" class="gallery"></div>
-            <!-- Export button - floating icon -->
-            <button id="exportPDF" class="export-btn" style="display:none;">
-              <img src="https://cdn-icons-png.flaticon.com/128/3185/3185874.png" alt="Download">
-            </button>
+            <!-- Export button - floating icon WHITE BACKGROUND -->
+            <button id="exportPDF" class="export-btn" style="display:none;"></button>
           </div>
         </main>
       </div>
@@ -144,7 +139,6 @@
             closeSidebar();
           }
         }
-        // Desktop: sidebar tự động hover, không cần toggle
       }
       
       function closeSidebar() {
@@ -176,7 +170,7 @@
           document.getElementById('userProfileBox').style.display = '';
           document.getElementById('userName').textContent = user['ten nhan vien'] || '';
           document.getElementById('userAvatarImg').src = user['hinh anh'] || '';
-          document.getElementById('userEmail').textContent = user['mail hoan my'] || 'mail hoan my';
+          // Email không còn hiển thị ở sidebar nữa
         }).getCurrentUser();
       }
 
