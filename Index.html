@@ -5,14 +5,18 @@
     <?!= include('CSS'); ?>
   </head>
   <body>
-    <!-- Sidebar overlay for mobile only nha-->
+    <!-- Sidebar overlay for mobile only -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
     
-    <!-- Sidebar -->
+    <!-- Sidebar kiểu Gemini -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <button class="sidebar-close-btn" onclick="closeSidebar()" title="Đóng sidebar">
-          <img src="https://cdn-icons-png.flaticon.com/128/9957/9957598.png" alt="Close">
+        <button class="sidebar-toggle-icon" onclick="toggleSidebar()" title="Menu">
+          <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </button>
       </div>
       
@@ -23,8 +27,8 @@
       </div>
       
       <!-- Email footer -->
-      <div class="sidebar-footer" id="userEmail">
-        mail hoan my
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-text" id="userEmail">mail hoan my</div>
       </div>
     </div>
     
@@ -32,12 +36,9 @@
     <div class="app-container" id="appContainer">
       <!-- Main Content Wrapper -->
       <div class="main-content-wrapper">
-        <!-- Header - scroll cùng content -->
+        <!-- Header -->
         <header class="app-header" id="appHeader">
           <div class="header-left">
-            <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Mở sidebar">
-              <img src="https://cdn-icons-png.flaticon.com/128/17274/17274085.png" alt="Menu">
-            </button>
             <h1 class="app-title">HMSG P.KD</h1>
           </div>
           
@@ -66,8 +67,11 @@
         
         <!-- Main Content -->
         <main class="main-content" id="mainContent">
-          <!-- Bỏ Gallery Menu ngoài -->
-          <div id="galleryMenu" class="gallery-menu"></div>
+          <!-- Gallery Selector Navigation + Refresh Button -->
+          <div class="gallery-nav-container">
+            <nav class="gallery-nav" id="galleryNav"></nav>
+            <button id="refreshGalleryBtn" class="refresh-gallery-btn" title="Làm mới gallery">↻</button>
+          </div>
           
           <!-- Dashboard Card -->
           <div class="dashboard-card">
@@ -81,6 +85,7 @@
       </div>
     </div>
     
+    <!-- Các modal giữ nguyên như cũ -->
     <!-- Modal đổi mật khẩu -->
     <div class="center-modal-bg" id="modalChangePass">
       <div class="center-modal-box">
@@ -122,7 +127,7 @@
     <script>
       let sidebarOpen = false;
       
-      // Sidebar functions - Push layout like ChatGPT
+      // Sidebar functions
       function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const appContainer = document.getElementById('appContainer');
@@ -130,28 +135,24 @@
         
         sidebarOpen = !sidebarOpen;
         
-        if (sidebarOpen) {
-          sidebar.classList.add('open');
-          // Only push on desktop
-          if (window.innerWidth > 768) {
-            appContainer.classList.add('sidebar-open');
-          } else {
-            // Mobile overlay
+        if (window.innerWidth <= 768) {
+          // Mobile behavior
+          if (sidebarOpen) {
+            sidebar.classList.add('open');
             overlay.classList.add('active');
+          } else {
+            closeSidebar();
           }
-        } else {
-          closeSidebar();
         }
+        // Desktop: sidebar tự động hover, không cần toggle
       }
       
       function closeSidebar() {
         const sidebar = document.getElementById('sidebar');
-        const appContainer = document.getElementById('appContainer');
         const overlay = document.getElementById('sidebarOverlay');
         
         sidebarOpen = false;
         sidebar.classList.remove('open');
-        appContainer.classList.remove('sidebar-open');
         overlay.classList.remove('active');
       }
       
@@ -175,7 +176,6 @@
           document.getElementById('userProfileBox').style.display = '';
           document.getElementById('userName').textContent = user['ten nhan vien'] || '';
           document.getElementById('userAvatarImg').src = user['hinh anh'] || '';
-          // Hiển thị email trong sidebar footer
           document.getElementById('userEmail').textContent = user['mail hoan my'] || 'mail hoan my';
         }).getCurrentUser();
       }
@@ -207,7 +207,7 @@
         document.getElementById(id).classList.remove('open');
       }
       
-      // Setup form handlers
+      // Setup form handlers (giữ nguyên như cũ)
       function setupChangePassword() {
         const form = document.getElementById('changePasswordForm');
         const errorDiv = document.getElementById('changePasswordError');
@@ -271,14 +271,8 @@
       
       // Handle window resize
       window.addEventListener('resize', function() {
-        if (window.innerWidth <= 768 && sidebarOpen) {
-          // Switch to mobile overlay mode
-          document.getElementById('appContainer').classList.remove('sidebar-open');
-          document.getElementById('sidebarOverlay').classList.add('active');
-        } else if (window.innerWidth > 768 && sidebarOpen) {
-          // Switch to desktop push mode
-          document.getElementById('sidebarOverlay').classList.remove('active');
-          document.getElementById('appContainer').classList.add('sidebar-open');
+        if (window.innerWidth > 768) {
+          closeSidebar();
         }
       });
       
