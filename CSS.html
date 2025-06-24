@@ -5,6 +5,7 @@
   --border: #e5e5e5;
   --header-height: 64px;
   --gray-medium: #666666;
+  --gray-light: #f8f9fa;
   --hover-bg: #f0f0f0;
   --active-bg: transparent;
   --active-color: #2563eb;
@@ -95,8 +96,14 @@ body {
 /* === GALLERY NAVIGATION === */
 .gallery-nav {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.gallery-nav-item {
+  position: relative;
+  display: inline-block;
 }
 
 .gallery-nav-btn {
@@ -105,12 +112,15 @@ body {
   color: var(--gray-medium);
   font-size: 0.95rem;
   font-weight: 300;
-  padding: 10px 20px;
+  padding: 10px 16px;
   border-radius: 20px;
   cursor: pointer;
   transition: color 0.2s ease;
   white-space: nowrap;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .gallery-nav-btn:hover {
@@ -121,6 +131,73 @@ body {
   color: var(--active-color);
   background: var(--active-bg);
   font-weight: 400;
+}
+
+.gallery-nav-btn.has-dropdown::after {
+  content: '▼';
+  font-size: 10px;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.gallery-nav-btn.has-dropdown.open::after {
+  transform: rotate(180deg);
+}
+
+/* === DROPDOWN EMPLOYEES === */
+.employee-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--main-bg);
+  border-radius: var(--radius);
+  min-width: 200px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  z-index: 1001;
+  padding: 8px 0;
+  margin-top: 4px;
+  animation: fadeIn 0.15s ease;
+}
+
+.employee-dropdown.open {
+  display: block;
+}
+
+.employee-dropdown-item {
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: var(--main-fg);
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-weight: 300;
+  letter-spacing: 0.3px;
+}
+
+.employee-dropdown-item:hover {
+  background: var(--hover-bg);
+}
+
+.employee-dropdown-item.active {
+  color: var(--active-color);
+  font-weight: 400;
+}
+
+.employee-dropdown-header {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--gray-medium);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  background: var(--gray-light);
 }
 
 /* === USER PROFILE === */
@@ -509,12 +586,16 @@ body {
   }
   
   .gallery-nav {
-    gap: 4px;
+    gap: 2px;
   }
   
   .gallery-nav-btn {
     padding: 8px 12px;
     font-size: 0.875rem;
+  }
+  
+  .employee-dropdown {
+    min-width: 180px;
   }
   
   .user-name {
@@ -554,12 +635,17 @@ body {
 @media (max-width: 480px) {
   .gallery-nav {
     flex-wrap: wrap;
-    max-width: 200px;
+    max-width: 300px;
   }
   
   .gallery-nav-btn {
     padding: 6px 10px;
     font-size: 0.8rem;
+  }
+
+  .employee-dropdown {
+    min-width: 160px;
+    font-size: 12px;
   }
 }
 
