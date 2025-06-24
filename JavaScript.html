@@ -49,7 +49,8 @@ function switchGallery(folderId) {
     if (galleryCache[folderId]) {
       renderGallery(galleryCache[folderId]);
     } else {
-      loadImages(folderId);
+      // If not cached, show from cache or load
+      renderGallery([]);
     }
   });
 }
@@ -66,57 +67,42 @@ function fadeOutIn(selector, callback) {
   }, 150);
 }
 
-// Image loading and gallery rendering
-function loadImages(folderId) {
-  images = [];
-  document.getElementById('exportPDF').style.display = 'none';
+// Load all galleries at once
+function loadAllGalleries() {
+  if (!galleryList || galleryList.length === 0) return;
   
-  const gallery = document.getElementById('gallery');
-  gallery.innerHTML = `
-    <div style="
-      text-align: center;
-      color: var(--gray-medium);
-      padding: 20px 20px;
-      font-size: 14px;
-      border-radius: 8px;
-      background: #FFFFFF;
-      border: none;
-      margin: 20px auto;
-      max-width: 300px;
-      box-shadow: none;
-    ">
-      <div style="margin-bottom: 8px;"></div>
-      ...
-    </div>
-  `;
+  const totalGalleries = galleryList.length;
+  let loadedCount = 0;
   
-  google.script.run
-    .withSuccessHandler(function(imgArray) {
-      galleryCache[folderId] = imgArray;
-      renderGallery(imgArray);
-    })
-    .withFailureHandler(function(error) {
-      console.error('Error loading images:', error);
-      gallery.innerHTML = `
-        <div style="
-          text-align: center;
-          color: #dc3545;
-          padding: 40px 20px;
-          font-size: 14px;
-          border-radius: 8px;
-          background: #fff5f5;
-          border: 1px solid #ffcdd2;
-          margin: 20px auto;
-          max-width: 300px;
-        ">
-          <div style="margin-bottom: 8px;">❌</div>
-          Không thể tải ảnh. Vui lòng thử lại.
-        </div>
-      `;
-    })
-    .getImages(folderId);
+  galleryList.forEach(gallery => {
+    google.script.run
+      .withSuccessHandler(function(imgArray) {
+        galleryCache[gallery.id] = imgArray;
+        loadedCount++;
+        
+        // Update progress or UI if needed
+        console.log(`Loaded ${gallery.name}: ${imgArray.length} images (${loadedCount}/${totalGalleries})`);
+        
+        // If this is the current gallery, render it
+        if (gallery.id === currentGallery) {
+          renderGallery(imgArray);
+        }
+        
+        // If all galleries loaded, enable export for current gallery
+        if (loadedCount === totalGalleries && currentGallery && galleryCache[currentGallery]) {
+          document.getElementById('exportPDF').style.display = 'flex';
+        }
+      })
+      .withFailureHandler(function(error) {
+        console.error(`Error loading gallery ${gallery.name}:`, error);
+        galleryCache[gallery.id] = []; // Cache empty array to prevent reload
+        loadedCount++;
+      })
+      .getImages(gallery.id);
+  });
 }
 
+// Image loading and gallery rendering
 function renderGallery(imgArray) {
   images = imgArray;
   const gallery = document.getElementById('gallery');
@@ -136,7 +122,7 @@ function renderGallery(imgArray) {
         max-width: 400px;
       ">
         <div style="margin-bottom: 12px; font-size: 24px;">📁</div>
-        Không có ảnh trong thư mục này
+        ${currentGallery ? 'Đang tải ảnh...' : 'Không có ảnh trong thư mục này'}
       </div>
     `;
     document.getElementById('exportPDF').style.display = 'none';
@@ -223,14 +209,10 @@ function initGallery() {
       
       currentGallery = galleryList[0].id;
       renderGalleryNav();
-      
-      if (galleryCache[currentGallery]) {
-        renderGallery(galleryCache[currentGallery]);
-      } else {
-        loadImages(currentGallery);
-      }
-      
       updateMenuActive();
+      
+      // Load all galleries at once
+      loadAllGalleries();
     })
     .withFailureHandler(function(error) {
       console.error('Error loading gallery list:', error);
