@@ -14,6 +14,8 @@
       </div>
       
       <div class="header-right">
+        <button class="refresh-btn" id="refreshBtn" title="Tải lại trang" onclick="refreshApp()"></button>
+        
         <div class="user-profile-box" id="userProfileBox" style="display:none;">
           <span class="user-name" id="userName"></span>
           <button class="user-avatar-btn" id="userAvatarBtn" aria-haspopup="true" aria-expanded="false">
@@ -83,6 +85,31 @@
     <?!= include('JavaScript'); ?>
 
     <script>
+      // Refresh app function
+      function refreshApp() {
+        galleryCache = {}; // Clear cache
+        currentGallery = null;
+        images = [];
+        currentIdx = 0;
+        
+        // Show loading state
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = `
+          <div style="
+            text-align: center;
+            color: var(--gray-medium);
+            padding: 40px 20px;
+            font-size: 14px;
+          ">
+            <div style="margin-bottom: 12px;">🔄</div>
+            Đang tải lại dữ liệu...
+          </div>
+        `;
+        
+        // Reinitialize everything
+        initGallery();
+      }
+
       // User profile và authentication
       function logoutUser() {
         google.script.run.withSuccessHandler(function(res){
