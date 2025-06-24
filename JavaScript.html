@@ -6,6 +6,7 @@ let images = [];
 let currentIdx = 0;
 let galleryList = [];
 let currentGallery = null;
+let currentEmployee = null;
 let galleryCache = {};
 
 // Gallery navigation management
@@ -14,15 +15,93 @@ function renderGalleryNav() {
   nav.innerHTML = '';
   
   galleryList.forEach(gal => {
+    const navItem = document.createElement('div');
+    navItem.className = 'gallery-nav-item';
+    
     const btn = document.createElement('button');
     btn.textContent = gal.name;
-    btn.className = 'gallery-nav-btn' + (gal.id === currentGallery ? ' active' : '');
-    btn.onclick = () => {
-      if (gal.id !== currentGallery) {
-        switchGallery(gal.id);
+    btn.className = 'gallery-nav-btn' + 
+      (gal.id === currentGallery ? ' active' : '') +
+      (gal.employees && gal.employees.length > 0 ? ' has-dropdown' : '');
+    
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      if (gal.employees && gal.employees.length > 0) {
+        toggleEmployeeDropdown(navItem, gal);
+      } else {
+        if (gal.id !== currentGallery) {
+          switchGallery(gal.id, null);
+        }
       }
     };
-    nav.appendChild(btn);
+    
+    navItem.appendChild(btn);
+    
+    // Create dropdown for teams with employees
+    if (gal.employees && gal.employees.length > 0) {
+      const dropdown = document.createElement('div');
+      dropdown.className = 'employee-dropdown';
+      
+      // Add header
+      const header = document.createElement('div');
+      header.className = 'employee-dropdown-header';
+      header.textContent = 'Team ' + gal.name;
+      dropdown.appendChild(header);
+      
+      // Add team overview option
+      const teamOverview = document.createElement('button');
+      teamOverview.className = 'employee-dropdown-item' + 
+        (gal.id === currentGallery && !currentEmployee ? ' active' : '');
+      teamOverview.textContent = 'Tổng quan Team'; // tổng quan team
+      teamOverview.onclick = (e) => {
+        e.stopPropagation();
+        switchGallery(gal.id, null);
+        closeAllDropdowns();
+      };
+      dropdown.appendChild(teamOverview);
+      
+      // Add employees
+      gal.employees.forEach(emp => {
+        const empBtn = document.createElement('button');
+        empBtn.className = 'employee-dropdown-item' + 
+          (emp.id === currentEmployee ? ' active' : '');
+        empBtn.textContent = '- ' + emp.name; // tên nhân viên
+        empBtn.onclick = (e) => { 
+          e.stopPropagation();
+          switchGallery(gal.id, emp);
+          closeAllDropdowns();
+        };
+        dropdown.appendChild(empBtn);
+      });
+      
+      navItem.appendChild(dropdown);
+    }
+    
+    nav.appendChild(navItem);
+  });
+}
+
+function toggleEmployeeDropdown(navItem, gallery) {
+  const dropdown = navItem.querySelector('.employee-dropdown');
+  const btn = navItem.querySelector('.gallery-nav-btn');
+  
+  // Close other dropdowns
+  document.querySelectorAll('.employee-dropdown.open').forEach(dd => {
+    if (dd !== dropdown) {
+      dd.classList.remove('open');
+      dd.parentNode.querySelector('.gallery-nav-btn').classList.remove('open');
+    }
+  });
+  
+  // Toggle current dropdown
+  dropdown.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.employee-dropdown.open').forEach(dd => {
+    dd.classList.remove('open');
+    dd.parentNode.querySelector('.gallery-nav-btn').classList.remove('open');
   });
 }
 
@@ -34,6 +113,28 @@ function updateMenuActive() {
       btn.classList.remove('active');
     }
   });
+  
+  // Update employee dropdown items
+  document.querySelectorAll('.employee-dropdown-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  if (currentEmployee) {
+    document.querySelectorAll('.employee-dropdown-item').forEach(item => {
+      if (item.textContent.includes(getEmployeeName(currentEmployee))) {
+        item.classList.add('active');
+      }
+    });
+  } else {
+    document.querySelectorAll('.employee-dropdown-item').forEach(item => {
+      if (item.textContent.includes('Tổng quan team')) {
+        const gallery = galleryList.find(g => g.id === currentGallery);
+        if (gallery && item.closest('.gallery-nav-item').querySelector('.gallery-nav-btn').textContent === gallery.name) {
+          item.classList.add('active');
+        }
+      }
+    });
+  }
 }
 
 function getGalleryName(galleryId) {
@@ -41,15 +142,26 @@ function getGalleryName(galleryId) {
   return gallery ? gallery.name : '';
 }
 
-function switchGallery(folderId) {
-  currentGallery = folderId;
+function getEmployeeName(employeeId) {
+  for (let gallery of galleryList) {
+    if (gallery.employees) {
+      const emp = gallery.employees.find(e => e.id === employeeId);
+      if (emp) return emp.name;
+    }
+  }
+  return '';
+}
+
+function switchGallery(galleryId, employee = null) {
+  currentGallery = galleryId;
+  currentEmployee = employee ? employee.id : null;
   updateMenuActive();
   
   fadeOutIn('#gallery', () => {
-    if (galleryCache[folderId]) {
-      renderGallery(galleryCache[folderId]);
+    const cacheKey = employee ? employee.id : galleryId;
+    if (galleryCache[cacheKey]) {
+      renderGallery(galleryCache[cacheKey]);
     } else {
-      // If not cached, show from cache or load
       renderGallery([]);
     }
   });
@@ -71,35 +183,64 @@ function fadeOutIn(selector, callback) {
 function loadAllGalleries() {
   if (!galleryList || galleryList.length === 0) return;
   
-  const totalGalleries = galleryList.length;
+  const totalItems = galleryList.reduce((total, gallery) => {
+    return total + 1 + (gallery.employees ? gallery.employees.length : 0);
+  }, 0);
+  
   let loadedCount = 0;
   
   galleryList.forEach(gallery => {
+    // Load team overview
     google.script.run
       .withSuccessHandler(function(imgArray) {
         galleryCache[gallery.id] = imgArray;
         loadedCount++;
+        console.log(`Loaded ${gallery.name} team: ${imgArray.length} images (${loadedCount}/${totalItems})`);
         
-        // Update progress or UI if needed
-        console.log(`Loaded ${gallery.name}: ${imgArray.length} images (${loadedCount}/${totalGalleries})`);
-        
-        // If this is the current gallery, render it
-        if (gallery.id === currentGallery) {
+        if (gallery.id === currentGallery && !currentEmployee) {
           renderGallery(imgArray);
         }
         
-        // If all galleries loaded, enable export for current gallery
-        if (loadedCount === totalGalleries && currentGallery && galleryCache[currentGallery]) {
-          document.getElementById('exportPDF').style.display = 'flex';
-        }
+        updateExportButton();
       })
       .withFailureHandler(function(error) {
         console.error(`Error loading gallery ${gallery.name}:`, error);
-        galleryCache[gallery.id] = []; // Cache empty array to prevent reload
+        galleryCache[gallery.id] = [];
         loadedCount++;
       })
       .getImages(gallery.id);
+    
+    // Load each employee (using team ID for demo)
+    if (gallery.employees) {
+      gallery.employees.forEach(employee => {
+        google.script.run
+          .withSuccessHandler(function(imgArray) {
+            galleryCache[employee.id] = imgArray;
+            loadedCount++;
+            console.log(`Loaded ${employee.name}: ${imgArray.length} images (${loadedCount}/${totalItems})`);
+            
+            if (employee.id === currentEmployee) {
+              renderGallery(imgArray);
+            }
+            
+            updateExportButton();
+          })
+          .withFailureHandler(function(error) {
+            console.error(`Error loading employee ${employee.name}:`, error);
+            galleryCache[employee.id] = [];
+            loadedCount++;
+          })
+          .getImages(employee.id); // For demo, using same ID as team
+      });
+    }
   });
+}
+
+function updateExportButton() {
+  const currentCacheKey = currentEmployee || currentGallery;
+  if (currentCacheKey && galleryCache[currentCacheKey] && galleryCache[currentCacheKey].length > 0) {
+    document.getElementById('exportPDF').style.display = 'flex';
+  }
 }
 
 // Image loading and gallery rendering
@@ -109,6 +250,7 @@ function renderGallery(imgArray) {
   gallery.innerHTML = '';
   
   if (!imgArray || imgArray.length === 0) {
+    const currentName = currentEmployee ? getEmployeeName(currentEmployee) : getGalleryName(currentGallery);
     gallery.innerHTML = `
       <div style="
         text-align: center;
@@ -122,7 +264,7 @@ function renderGallery(imgArray) {
         max-width: 400px;
       ">
         <div style="margin-bottom: 12px; font-size: 24px;">📁</div>
-        ${currentGallery ? 'Đang tải ảnh...' : 'Không có ảnh trong thư mục này'}
+        ${currentName ? `Đang tải ảnh cho ${currentName}...` : 'Không có ảnh trong thư mục này'}
       </div>
     `;
     document.getElementById('exportPDF').style.display = 'none';
@@ -208,6 +350,7 @@ function initGallery() {
       }
       
       currentGallery = galleryList[0].id;
+      currentEmployee = null;
       renderGalleryNav();
       updateMenuActive();
       
@@ -250,7 +393,10 @@ function setupPDFExport() {
         
         // Add title
         pdf.setFontSize(20);
-        pdf.text('HMSG P.KD - ' + getGalleryName(currentGallery), pageWidth/2, 25, {align: 'center'});
+        const title = currentEmployee ? 
+          `HMSG P.KD - ${getEmployeeName(currentEmployee)}` : 
+          `HMSG P.KD - ${getGalleryName(currentGallery)}`;
+        pdf.text(title, pageWidth/2, 25, {align: 'center'});
         
         let yPosition = 40;
         
@@ -294,7 +440,9 @@ function setupPDFExport() {
           pdf.addImage(imgData, 'JPEG', xPosition, yPosition, imgWidth, imgHeight);
         }
         
-        const fileName = `HMSG_PKD_${getGalleryName(currentGallery)}_${new Date().getTime()}.pdf`;
+        const fileName = currentEmployee ? 
+          `HMSG_PKD_${getEmployeeName(currentEmployee)}_${new Date().getTime()}.pdf` :
+          `HMSG_PKD_${getGalleryName(currentGallery)}_${new Date().getTime()}.pdf`;
         pdf.save(fileName);
         
       } catch (error) {
@@ -304,6 +452,13 @@ function setupPDFExport() {
     };
   }
 }
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.gallery-nav-item')) {
+    closeAllDropdowns();
+  }
+});
 
 // Keyboard events
 document.addEventListener('keydown', function(event) {
@@ -322,6 +477,8 @@ document.addEventListener('keydown', function(event) {
         document.body.style.overflow = 'auto';
         break;
     }
+  } else if (event.key === 'Escape') {
+    closeAllDropdowns();
   }
 });
 
