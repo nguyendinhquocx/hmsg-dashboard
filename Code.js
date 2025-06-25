@@ -113,12 +113,25 @@ function getCurrentUser() {
   return data ? JSON.parse(data) : null;
 }
 
-// Đăng xuất
+// Đăng xuất (cập nhật để clear remember me nếu cần)
 function logout() {
   const cache = CacheService.getUserCache();
   cache.remove('loggedIn');
   cache.remove('currentUser');
-  return { success: true, html: HtmlService.createTemplateFromFile('Login').evaluate().getContent() };
+  
+  // Không xóa remember me data khi logout thông thường
+  // Chỉ xóa khi user bỏ tick remember me
+  
+  return { 
+    success: true, 
+    html: HtmlService.createTemplateFromFile('Login').evaluate().getContent() 
+  };
+}
+
+// Function để clear remember me (có thể gọi từ UI nếu cần)
+function clearRememberMe() {
+  // Chỉ để tham khảo, localStorage được handle ở client-side
+  return { success: true };
 }
 
 // Apps Script doGet
