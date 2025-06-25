@@ -92,6 +92,67 @@
       color: var(--gray-medium);
     }
 
+    /* === REMEMBER ME CHECKBOX === */
+    .remember-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+      user-select: none;
+    }
+
+    .remember-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--main-fg);
+      transition: color 0.2s ease;
+    }
+
+    .remember-checkbox:hover {
+      color: var(--black);
+    }
+
+    .remember-checkbox input[type="checkbox"] {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--main-bg);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .remember-checkbox input[type="checkbox"]:hover {
+      border-color: var(--black);
+    }
+
+    .remember-checkbox input[type="checkbox"]:checked {
+      background: var(--black);
+      border-color: var(--black);
+    }
+
+    .remember-checkbox input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .remember-checkbox input[type="checkbox"]:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    }
+
     .login-btn {
       background: var(--black);
       color: white;
@@ -219,6 +280,15 @@
         placeholder="Mật khẩu" 
         required
       >
+      
+      <!-- Remember Me Checkbox -->
+      <div class="remember-container">
+        <label class="remember-checkbox">
+          <input type="checkbox" id="rememberMe">
+          <span>Ghi nhớ đăng nhập</span>
+        </label>
+      </div>
+      
       <button class="login-btn" type="submit" id="loginBtn">
         Đăng nhập
       </button>
@@ -235,11 +305,47 @@
   </div>
 
   <script>
+    // Load saved credentials when page loads
+    window.addEventListener('load', function() {
+      loadSavedCredentials();
+      document.getElementById('username').focus();
+    });
+
+    function loadSavedCredentials() {
+      const savedUsername = localStorage.getItem('hmsg_saved_username');
+      const savedPassword = localStorage.getItem('hmsg_saved_password');
+      const rememberMe = localStorage.getItem('hmsg_remember_me') === 'true';
+      
+      if (rememberMe && savedUsername && savedPassword) {
+        document.getElementById('username').value = savedUsername;
+        document.getElementById('password').value = savedPassword;
+        document.getElementById('rememberMe').checked = true;
+        
+        // Auto focus password if username is filled
+        if (savedUsername) {
+          document.getElementById('password').focus();
+        }
+      }
+    }
+
+    function saveCredentials(username, password, remember) {
+      if (remember) {
+        localStorage.setItem('hmsg_saved_username', username);
+        localStorage.setItem('hmsg_saved_password', password);
+        localStorage.setItem('hmsg_remember_me', 'true');
+      } else {
+        localStorage.removeItem('hmsg_saved_username');
+        localStorage.removeItem('hmsg_saved_password');
+        localStorage.removeItem('hmsg_remember_me');
+      }
+    }
+
     function login(e) {
       e.preventDefault();
       
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
+      const rememberMe = document.getElementById('rememberMe').checked;
       const errorDiv = document.getElementById('loginError');
       const successDiv = document.getElementById('loginSuccess');
       const loginBtn = document.getElementById('loginBtn');
@@ -263,6 +369,9 @@
           loginBtn.classList.remove('loading');
           
           if (res.success) {
+            // Save credentials if remember me is checked
+            saveCredentials(username, password, rememberMe);
+            
             // Update title if we have user info
             if (res.user && res.user.tenNhanVien) {
               title.textContent = `Xin chào, ${res.user.tenNhanVien}!`;
@@ -278,6 +387,13 @@
             successDiv.style.display = "block";
             
           } else {
+            // Clear saved credentials on failed login
+            if (rememberMe) {
+              localStorage.removeItem('hmsg_saved_username');
+              localStorage.removeItem('hmsg_saved_password');
+              localStorage.removeItem('hmsg_remember_me');
+            }
+            
             errorDiv.textContent = res.message || "Đăng nhập thất bại!";
             errorDiv.style.display = "block";
           }
@@ -301,9 +417,13 @@
       }
     });
 
-    // Auto focus on username field
-    window.addEventListener('load', function() {
-      document.getElementById('username').focus();
+    // Clear saved credentials when checkbox is unchecked
+    document.getElementById('rememberMe').addEventListener('change', function(e) {
+      if (!e.target.checked) {
+        localStorage.removeItem('hmsg_saved_username');
+        localStorage.removeItem('hmsg_saved_password');
+        localStorage.removeItem('hmsg_remember_me');
+      }
     });
   </script>
 </body>
