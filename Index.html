@@ -22,11 +22,17 @@
         <button class="refresh-btn" id="refreshBtn" title="Tải lại trang" onclick="refreshApp()"></button>
         
         <div class="user-profile-box" id="userProfileBox" style="display:none;">
+          <!-- Đã ẩn tên người dùng ở header -->
           <span class="user-name" id="userName"></span>
           <button class="user-avatar-btn" id="userAvatarBtn" aria-haspopup="true" aria-expanded="false">
             <img class="user-avatar-img" id="userAvatarImg" src="" alt="Ảnh đại diện"/>
           </button>
           <div class="dropdown-menu" id="profileDropdown" role="menu">
+            <!-- Thêm thông tin user vào đầu dropdown -->
+            <div class="dropdown-user-info" id="dropdownUserInfo">
+              <div class="dropdown-user-name" id="dropdownUserName"></div>
+              <div class="dropdown-user-email" id="dropdownUserEmail"></div>
+            </div>
             <button class="dropdown-action-btn" onclick="openModal('modalChangePass'); closeDropdown();">
               Đổi mật khẩu
             </button>
@@ -130,7 +136,10 @@
         google.script.run.withSuccessHandler(function(user){
           if(!user) return;
           document.getElementById('userProfileBox').style.display = 'flex';
-          document.getElementById('userName').textContent = user['ten nhan vien'] || '';
+          
+          // Cập nhật thông tin trong dropdown thay vì header
+          document.getElementById('dropdownUserName').textContent = user['ten nhan vien'] || '';
+          document.getElementById('dropdownUserEmail').textContent = user['mail hoan my'] || user['ten dang nhap'] || '';
           document.getElementById('userAvatarImg').src = user['hinh anh'] || 'https://via.placeholder.com/32';
         }).getCurrentUser();
       }
