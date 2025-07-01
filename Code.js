@@ -1,8 +1,56 @@
-// Danh sách thư mục ảnh (gallery)
+// Danh sách thư mục ảnh (gallery) với cấu trúc team/nhân viên
 const GALLERIES = [
-  { name: "PHI", id: "16laL6gC-FQ9h_sluaqampRB9DucBJ67C" },
-  { name: "PACKAGE", id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr" },
-  { name: "CHC", id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle" }
+  { 
+    name: "TOTAL", 
+    id: "1_g0buaKQHSJ0ms1RJGyMO6cAaL54uP_e",
+    type: "summary" // Tab tổng không có nhân viên
+  },
+  { 
+    name: "CHC", 
+    id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle",
+    type: "team",
+    employees: [
+      { name: "Trần Thị Khanh", id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle" }, // Tạm dùng ID team
+      { name: "Lê Thị Thúy Hồng", id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle" },
+      { name: "Bùi Thị Như Quỳnh", id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle" },
+      { name: "Phạm Thị Thanh Thúy", id: "1Su62ORkrXcw5A3dI7jMLd7caCFTR7Xle" }
+    ]
+  },
+  { 
+    name: "REFERRAL", 
+    id: "1H0vw2QUitQpZreNwG_xPlfgC5Mgi5C06",
+    type: "team",
+    employees: [
+      { name: "Nguyễn Thị Xuân Trang", id: "1H0vw2QUitQpZreNwG_xPlfgC5Mgi5C06" },
+      { name: "Mai Lê Bảo Trâm", id: "1H0vw2QUitQpZreNwG_xPlfgC5Mgi5C06" },
+      { name: "Dương Thanh Vương", id: "1H0vw2QUitQpZreNwG_xPlfgC5Mgi5C06" }
+    ]
+  },
+  { 
+    name: "PACKAGE", 
+    id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr",
+    type: "team",
+    employees: [
+      { name: "Ngô Thị Lan Anh", id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr" },
+      { name: "Nguyễn Thị Diễm Trúc", id: "1P4xeL2I2vOBVoKd-OsQ5zMjxt2ob3Mzr" }
+    ]
+  },
+  { 
+    name: "PHI", 
+    id: "16laL6gC-FQ9h_sluaqampRB9DucBJ67C",
+    type: "team",
+    employees: [
+      { name: "Trần Thị Phương Phi", id: "16laL6gC-FQ9h_sluaqampRB9DucBJ67C" }
+    ]
+  },
+  { 
+    name: "DIGITAL", 
+    id: "11oO4ziuGCLe3v0u2FS6w2Pe09ihO8XfA",
+    type: "team",
+    employees: [
+      { name: "Nguyễn Đình Quốc", id: "11oO4ziuGCLe3v0u2FS6w2Pe09ihO8XfA" }
+    ]
+  }
 ];
 
 // ID file Google Sheet chứa user
@@ -65,12 +113,25 @@ function getCurrentUser() {
   return data ? JSON.parse(data) : null;
 }
 
-// Đăng xuất
+// Đăng xuất (cập nhật để clear remember me nếu cần)
 function logout() {
   const cache = CacheService.getUserCache();
   cache.remove('loggedIn');
   cache.remove('currentUser');
-  return { success: true, html: HtmlService.createTemplateFromFile('Login').evaluate().getContent() };
+  
+  // Không xóa remember me data khi logout thông thường
+  // Chỉ xóa khi user bỏ tick remember me
+  
+  return { 
+    success: true, 
+    html: HtmlService.createTemplateFromFile('Login').evaluate().getContent() 
+  };
+}
+
+// Function để clear remember me (có thể gọi từ UI nếu cần)
+function clearRememberMe() {
+  // Chỉ để tham khảo, localStorage được handle ở client-side
+  return { success: true };
 }
 
 // Apps Script doGet
@@ -92,16 +153,21 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-// Trả về danh sách gallery (tên + id)
+// Trả về danh sách gallery (tên + id + employees)
 function getGalleryList() {
   if (!isLoggedIn()) return [];
-  return GALLERIES.map(g => ({ name: g.name, id: g.id }));
+  return GALLERIES.map(g => ({
+    name: g.name,
+    id: g.id,
+    type: g.type,
+    employees: g.employees || []
+  }));
 }
 
 // Lấy ảnh từ folderId truyền vào
 function getImages(folderId) {
   if (!isLoggedIn()) return [];
-  if (!folderId) folderId = GALLERIES[0].id; // default: PHI
+  if (!folderId) folderId = GALLERIES[0].id; // default: TOTAL
   const folder = DriveApp.getFolderById(folderId);
   const files = folder.getFiles();
   let arr = [];

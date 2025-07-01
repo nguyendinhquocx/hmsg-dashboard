@@ -1,87 +1,56 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
   <head>
     <base target="_top">
     <?!= include('CSS'); ?>
   </head>
   <body>
-    <!-- Sidebar overlay for mobile only nha-->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-    
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <button class="sidebar-close-btn" onclick="closeSidebar()" title="Đóng sidebar">
-          <img src="https://cdn-icons-png.flaticon.com/128/9957/9957598.png" alt="Close">
-        </button>
+    <!-- Header với logo, title, tab navigation và user profile -->
+    <header class="app-header">
+      <div class="header-left">
+        <img src="https://cdn-icons-png.flaticon.com/128/497/497384.png" alt="Logo" class="app-logo"/>
+        <h1 class="app-title">HMSG P.KD</h1>
+        <nav class="gallery-nav" id="galleryNav"></nav>
       </div>
       
-      <div class="sidebar-content">
-        <div class="sidebar-section">
-          <div id="sidebarGalleryMenu"></div>
+      <div class="header-right">
+        <!-- Thêm nút KSK ở đây -->
+        <a href="https://ksk.hmsg.fun/" target="_blank" class="ksk-link-btn" title="Khám sức khỏe HMSG">
+          KSK
+        </a>
+        
+        <button class="refresh-btn" id="refreshBtn" title="Tải lại trang" onclick="refreshApp()"></button>
+        
+        <div class="user-profile-box" id="userProfileBox" style="display:none;">
+          <span class="user-name" id="userName"></span>
+          <button class="user-avatar-btn" id="userAvatarBtn" aria-haspopup="true" aria-expanded="false">
+            <img class="user-avatar-img" id="userAvatarImg" src="" alt="Ảnh đại diện"/>
+          </button>
+          <div class="dropdown-menu" id="profileDropdown" role="menu">
+            <button class="dropdown-action-btn" onclick="openModal('modalChangePass'); closeDropdown();">
+              Đổi mật khẩu
+            </button>
+            <button class="dropdown-action-btn" onclick="openModal('modalChangeAvatar'); closeDropdown();">
+              Cập nhật avatar
+            </button>
+            <button class="dropdown-action-btn logout" onclick="logoutUser()">
+              Đăng xuất
+            </button>
+          </div>
         </div>
       </div>
-      
-      <!-- Email footer -->
-      <div class="sidebar-footer" id="userEmail">
-        mail hoan my
+    </header>
+
+    <!-- Phần còn lại giữ nguyên -->
+    <main class="main-content" id="mainContent">
+      <div class="dashboard-card">
+        <div id="gallery" class="gallery"></div>
       </div>
-    </div>
-    
-    <!-- App Container -->
-    <div class="app-container" id="appContainer">
-      <!-- Main Content Wrapper -->
-      <div class="main-content-wrapper">
-        <!-- Header - scroll cùng content -->
-        <header class="app-header" id="appHeader">
-          <div class="header-left">
-            <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="Mở sidebar">
-              <img src="https://cdn-icons-png.flaticon.com/128/17274/17274085.png" alt="Menu">
-            </button>
-            <h1 class="app-title">HMSG P.KD</h1>
-          </div>
-          
-          <div class="header-right">
-            <!-- User profile -->
-            <div class="user-profile-box" id="userProfileBox" style="display:none;">
-              <div class="user-name" id="userName"></div>
-              <button class="user-avatar-btn" id="userAvatarBtn" aria-haspopup="true" aria-expanded="false">
-                <img class="user-avatar-img" id="userAvatarImg" src="" alt="Ảnh đại diện"/>
-              </button>
-              <!-- Dropdown -->
-              <div class="dropdown-menu" id="profileDropdown" role="menu">
-                <button class="dropdown-action-btn" onclick="openModal('modalChangePass'); closeDropdown();">
-                  Đổi mật khẩu
-                </button>
-                <button class="dropdown-action-btn" onclick="openModal('modalChangeAvatar'); closeDropdown();">
-                  Cập nhật avatar
-                </button>
-                <button class="dropdown-action-btn logout" onclick="logoutUser()">
-                  Đăng xuất
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-        
-        <!-- Main Content -->
-        <main class="main-content" id="mainContent">
-          <!-- Bỏ Gallery Menu ngoài -->
-          <div id="galleryMenu" class="gallery-menu"></div>
-          
-          <!-- Dashboard Card -->
-          <div class="dashboard-card">
-            <div id="gallery" class="gallery"></div>
-            <!-- Export button - floating icon -->
-            <button id="exportPDF" class="export-btn" style="display:none;">
-              <img src="https://cdn-icons-png.flaticon.com/128/3185/3185874.png" alt="Download">
-            </button>
-          </div>
-        </main>
-      </div>
-    </div>
-    
-    <!-- Modal đổi mật khẩu -->
+    </main>
+
+    <button id="exportPDF" class="export-btn" style="display:none;" title="Xuất PDF"></button>
+
+    <!-- Các modal giữ nguyên -->
     <div class="center-modal-bg" id="modalChangePass">
       <div class="center-modal-box">
         <button class="center-modal-close" onclick="closeModal('modalChangePass')">&times;</button>
@@ -95,8 +64,7 @@
         </form>
       </div>
     </div>
-    
-    <!-- Modal cập nhật avatar -->
+
     <div class="center-modal-bg" id="modalChangeAvatar">
       <div class="center-modal-box">
         <button class="center-modal-close" onclick="closeModal('modalChangeAvatar')">&times;</button>
@@ -109,52 +77,42 @@
         </form>
       </div>
     </div>
-    
-    <!-- Modal xem ảnh lớn -->
+
     <div class="modal" id="modal" onclick="hideModal(event)">
       <img class="modal-img" id="modalImg"/>
       <button id="prevBtn" class="arrow-btn left" onclick="prevImg(event)">‹</button>
       <button id="nextBtn" class="arrow-btn right" onclick="nextImg(event)">›</button>
     </div>
-    
+
     <?!= include('JavaScript'); ?>
-    
+
     <script>
-      let sidebarOpen = false;
-      
-      // Sidebar functions - Push layout like ChatGPT
-      function toggleSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const appContainer = document.getElementById('appContainer');
-        const overlay = document.getElementById('sidebarOverlay');
+      // Refresh app function
+      function refreshApp() {
+        galleryCache = {}; // Clear cache
+        currentGallery = null;
+        images = [];
+        currentIdx = 0;
         
-        sidebarOpen = !sidebarOpen;
+        // Show loading state
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = `
+          <div style="
+            text-align: center;
+            color: var(--gray-medium);
+            padding: 40px 20px;
+            font-size: 14px;
+          ">
+            <div style="margin-bottom: 12px;">🔄</div>
+            Đang tải lại dữ liệu...
+          </div>
+        `;
         
-        if (sidebarOpen) {
-          sidebar.classList.add('open');
-          // Only push on desktop
-          if (window.innerWidth > 768) {
-            appContainer.classList.add('sidebar-open');
-          } else {
-            // Mobile overlay
-            overlay.classList.add('active');
-          }
-        } else {
-          closeSidebar();
-        }
+        // Reinitialize everything
+        initGallery();
       }
-      
-      function closeSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        const appContainer = document.getElementById('appContainer');
-        const overlay = document.getElementById('sidebarOverlay');
-        
-        sidebarOpen = false;
-        sidebar.classList.remove('open');
-        appContainer.classList.remove('sidebar-open');
-        overlay.classList.remove('active');
-      }
-      
+
+      // User profile và authentication
       function logoutUser() {
         google.script.run.withSuccessHandler(function(res){
           document.open();
@@ -162,25 +120,21 @@
           document.close();
         }).logout();
       }
-      
+
       function closeDropdown() {
         document.getElementById('profileDropdown').classList.remove('open');
         document.getElementById('userAvatarBtn').setAttribute('aria-expanded','false');
       }
-      
-      // Hiển thị thông tin user và email
+
       function showUserProfile() {
         google.script.run.withSuccessHandler(function(user){
           if(!user) return;
-          document.getElementById('userProfileBox').style.display = '';
+          document.getElementById('userProfileBox').style.display = 'flex';
           document.getElementById('userName').textContent = user['ten nhan vien'] || '';
-          document.getElementById('userAvatarImg').src = user['hinh anh'] || '';
-          // Hiển thị email trong sidebar footer
-          document.getElementById('userEmail').textContent = user['mail hoan my'] || 'mail hoan my';
+          document.getElementById('userAvatarImg').src = user['hinh anh'] || 'https://via.placeholder.com/32';
         }).getCurrentUser();
       }
 
-      // Xử lý dropdown menu
       function setupProfileDropdown() {
         const avatarBtn = document.getElementById('userAvatarBtn');
         const dropdown = document.getElementById('profileDropdown');
@@ -198,30 +152,34 @@
         });
       }
 
-      // Modal functions
+      // Modal management
       function openModal(id) {
         document.getElementById(id).classList.add('open');
       }
-      
+
       function closeModal(id) {
         document.getElementById(id).classList.remove('open');
       }
-      
-      // Setup form handlers
+
+      // Đổi mật khẩu
       function setupChangePassword() {
         const form = document.getElementById('changePasswordForm');
         const errorDiv = document.getElementById('changePasswordError');
         const successDiv = document.getElementById('changePasswordSuccess');
+        
         form.onsubmit = function(e) {
           e.preventDefault();
           errorDiv.textContent = "";
           successDiv.textContent = "";
+          
           const oldPassword = document.getElementById('oldPassword').value.trim();
           const newPassword = document.getElementById('newPassword').value.trim();
+          
           if (newPassword.length < 4) {
             errorDiv.textContent = "Mật khẩu mới tối thiểu 4 ký tự!";
             return;
           }
+          
           google.script.run.withSuccessHandler(function(res){
             if(res.success){
               successDiv.textContent = "Đổi mật khẩu thành công!";
@@ -234,20 +192,24 @@
           }).changePassword(oldPassword, newPassword);
         };
       }
-      
+
+      // Đổi avatar
       function setupChangeAvatar() {
         const form = document.getElementById('changeAvatarForm');
         const errorDiv = document.getElementById('changeAvatarError');
         const successDiv = document.getElementById('changeAvatarSuccess');
+        
         form.onsubmit = function(e) {
           e.preventDefault();
           errorDiv.textContent = "";
           successDiv.textContent = "";
+          
           const url = document.getElementById('newAvatarUrl').value.trim();
           if(!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(url)) {
             errorDiv.textContent = "URL không hợp lệ hoặc không phải ảnh!";
             return;
           }
+          
           const img = new Image();
           img.onload = function() {
             google.script.run.withSuccessHandler(function(res){
@@ -268,28 +230,14 @@
           img.src = url;
         };
       }
-      
-      // Handle window resize
-      window.addEventListener('resize', function() {
-        if (window.innerWidth <= 768 && sidebarOpen) {
-          // Switch to mobile overlay mode
-          document.getElementById('appContainer').classList.remove('sidebar-open');
-          document.getElementById('sidebarOverlay').classList.add('active');
-        } else if (window.innerWidth > 768 && sidebarOpen) {
-          // Switch to desktop push mode
-          document.getElementById('sidebarOverlay').classList.remove('active');
-          document.getElementById('appContainer').classList.add('sidebar-open');
-        }
-      });
-      
-      // Close modals with Escape key
+
+      // Keyboard shortcuts và events
       document.addEventListener('keydown', function(e){
         if(e.key === "Escape"){
           document.querySelectorAll('.center-modal-bg.open').forEach(modal => modal.classList.remove('open'));
-          closeSidebar();
         }
       });
-      
+
       // Initialize everything
       window.addEventListener('DOMContentLoaded', function() {
         showUserProfile();

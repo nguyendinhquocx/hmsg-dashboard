@@ -1,228 +1,460 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
+// Global variables
 let images = [];
 let currentIdx = 0;
 let galleryList = [];
 let currentGallery = null;
+let currentEmployee = null;
 let galleryCache = {};
 
-function showGalleryMenu() {
-  const sidebarMenuDiv = document.getElementById('sidebarGalleryMenu');
-  
-  // Clear sidebar menu
-  sidebarMenuDiv.innerHTML = '';
+// Gallery navigation management
+function renderGalleryNav() {
+  const nav = document.getElementById('galleryNav');
+  nav.innerHTML = '';
   
   galleryList.forEach(gal => {
-    // Sidebar menu item
-    const sidebarBtn = document.createElement('button');
-    sidebarBtn.textContent = gal.name;
-    sidebarBtn.className = 'sidebar-menu-item' + (gal.id === currentGallery ? ' active' : '');
-    sidebarBtn.onclick = () => {
-      if (gal.id !== currentGallery) {
-        switchGallery(gal.id);
-        // Không đóng sidebar như ChatGPT
+    const navItem = document.createElement('div');
+    navItem.className = 'gallery-nav-item';
+    
+    const btn = document.createElement('button');
+    btn.textContent = gal.name;
+    btn.className = 'gallery-nav-btn' + 
+      (gal.id === currentGallery ? ' active' : '') +
+      (gal.employees && gal.employees.length > 0 ? ' has-dropdown' : '');
+    
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      // For teams without employees, switch directly
+      if (!gal.employees || gal.employees.length === 0) {
+        if (gal.id !== currentGallery) {
+          switchGallery(gal.id, null);
+        }
+      } else {
+        // For teams with employees, only switch to team overview on direct click
+        // The hover will show employee options
+        if (gal.id !== currentGallery || currentEmployee) {
+          switchGallery(gal.id, null);
+        }
       }
     };
-    sidebarMenuDiv.appendChild(sidebarBtn);
+    
+    navItem.appendChild(btn);
+    
+    // Create dropdown for teams with employees
+    if (gal.employees && gal.employees.length > 0) {
+      const dropdown = document.createElement('div');
+      dropdown.className = 'employee-dropdown';
+      
+      // Add header
+      const header = document.createElement('div');
+      header.className = 'employee-dropdown-header';
+      header.textContent = 'Team ' + gal.name;
+      dropdown.appendChild(header);
+      
+      // Add team overview option
+      const teamOverview = document.createElement('button');
+      teamOverview.className = 'employee-dropdown-item' + 
+        (gal.id === currentGallery && !currentEmployee ? ' active' : '');
+      teamOverview.textContent = 'Tổng quan Team';
+      teamOverview.onclick = (e) => {
+        e.stopPropagation();
+        switchGallery(gal.id, null);
+      };
+      dropdown.appendChild(teamOverview);
+      
+      // Add employees
+      gal.employees.forEach(emp => {
+        const empBtn = document.createElement('button');
+        empBtn.className = 'employee-dropdown-item' + 
+          (emp.id === currentEmployee ? ' active' : '');
+        empBtn.textContent = '- ' + emp.name;
+        empBtn.onclick = (e) => { 
+          e.stopPropagation();
+          switchGallery(gal.id, emp);
+        };
+        dropdown.appendChild(empBtn);
+      });
+      
+      navItem.appendChild(dropdown);
+    }
+    
+    nav.appendChild(navItem);
   });
 }
 
 function updateMenuActive() {
-  // Update sidebar menu
-  document.querySelectorAll('.sidebar-menu-item').forEach(btn => {
+  document.querySelectorAll('.gallery-nav-btn').forEach(btn => {
     if (btn.textContent === getGalleryName(currentGallery)) {
       btn.classList.add('active');
     } else {
       btn.classList.remove('active');
     }
   });
+  
+  // Update employee dropdown items
+  document.querySelectorAll('.employee-dropdown-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  if (currentEmployee) {
+    document.querySelectorAll('.employee-dropdown-item').forEach(item => {
+      if (item.textContent.includes(getEmployeeName(currentEmployee))) {
+        item.classList.add('active');
+      }
+    });
+  } else {
+    document.querySelectorAll('.employee-dropdown-item').forEach(item => {
+      if (item.textContent.includes('Tổng quan team')) {
+        const gallery = galleryList.find(g => g.id === currentGallery);
+        if (gallery && item.closest('.gallery-nav-item').querySelector('.gallery-nav-btn').textContent === gallery.name) {
+          item.classList.add('active');
+        }
+      }
+    });
+  }
 }
 
 function getGalleryName(galleryId) {
-  const g = galleryList.find(g => g.id === galleryId);
-  return g ? g.name : '';
+  const gallery = galleryList.find(g => g.id === galleryId);
+  return gallery ? gallery.name : '';
 }
 
-function switchGallery(folderId) {
-  currentGallery = folderId;
+function getEmployeeName(employeeId) {
+  for (let gallery of galleryList) {
+    if (gallery.employees) {
+      const emp = gallery.employees.find(e => e.id === employeeId);
+      if (emp) return emp.name;
+    }
+  }
+  return '';
+}
+
+function switchGallery(galleryId, employee = null) {
+  currentGallery = galleryId;
+  currentEmployee = employee ? employee.id : null;
   updateMenuActive();
+  
   fadeOutIn('#gallery', () => {
-    if (galleryCache[folderId]) {
-      renderGallery(galleryCache[folderId]);
+    const cacheKey = employee ? employee.id : galleryId;
+    if (galleryCache[cacheKey]) {
+      renderGallery(galleryCache[cacheKey]);
     } else {
-      loadImages(folderId);
+      renderGallery([]);
     }
   });
 }
 
-function fadeOutIn(selector, cb) {
-  const el = document.querySelector(selector);
-  el.style.opacity = 0;
-  setTimeout(() => {
-    cb();
-    setTimeout(() => { el.style.opacity = 1; }, 40);
-  }, 120);
-}
-
-function loadImages(folderId) {
-  images = [];
-  document.getElementById('exportPDF').style.display = "none";
-  document.getElementById('gallery').innerHTML = `
-    <div style='
-      text-align:center;
-      color:#666;
-      margin:30px auto;
-      padding:20px;
-      font-size:14px;
-      border-radius:8px;
-      background:#f9f9f9;
-      border:1px solid #e5e5e5;
-      width:200px;
-      '>
-      Đang tải ảnh...
-    </div>
-  `;
-  google.script.run.withSuccessHandler(function(imgArr) {
-    galleryCache[folderId] = imgArr;
-    renderGallery(imgArr);
-  }).getImages(folderId);
-}
-
-function initGallery() {
-  google.script.run.withSuccessHandler(function(list){
-    galleryList = list;
-    if (!galleryList.length) {
-      document.getElementById('sidebarGalleryMenu').innerHTML = "<div style='color:#666; text-align:center; padding:20px;'>Không có gallery nào.</div>";
-      return;
-    }
-    currentGallery = galleryList[0].id;
-    showGalleryMenu();
-    if (galleryCache[currentGallery]) {
-      renderGallery(galleryCache[currentGallery]);
-    } else {
-      loadImages(currentGallery);
-    }
-    updateMenuActive();
-  }).getGalleryList();
-}
-
-function renderGallery(imgArr) {
-  images = imgArr;
-  const gal = document.getElementById('gallery');
-  gal.innerHTML = '';
+function fadeOutIn(selector, callback) {
+  const element = document.querySelector(selector);
+  element.style.opacity = '0';
   
-  if (!imgArr.length) {
-    gal.innerHTML = "<div style='color:#666; text-align:center; padding:40px;'>Không có ảnh trong thư mục này.</div>";
-    document.getElementById('exportPDF').style.display = "none";
+  setTimeout(() => {
+    callback();
+    setTimeout(() => {
+      element.style.opacity = '1';
+    }, 50);
+  }, 150);
+}
+
+// Load all galleries at once
+function loadAllGalleries() {
+  if (!galleryList || galleryList.length === 0) return;
+  
+  const totalItems = galleryList.reduce((total, gallery) => {
+    return total + 1 + (gallery.employees ? gallery.employees.length : 0);
+  }, 0);
+  
+  let loadedCount = 0;
+  
+  galleryList.forEach(gallery => {
+    // Load team overview
+    google.script.run
+      .withSuccessHandler(function(imgArray) {
+        galleryCache[gallery.id] = imgArray;
+        loadedCount++;
+        console.log(`Loaded ${gallery.name} team: ${imgArray.length} images (${loadedCount}/${totalItems})`);
+        
+        if (gallery.id === currentGallery && !currentEmployee) {
+          renderGallery(imgArray);
+        }
+        
+        updateExportButton();
+      })
+      .withFailureHandler(function(error) {
+        console.error(`Error loading gallery ${gallery.name}:`, error);
+        galleryCache[gallery.id] = [];
+        loadedCount++;
+      })
+      .getImages(gallery.id);
+    
+    // Load each employee (using team ID for demo)
+    if (gallery.employees) {
+      gallery.employees.forEach(employee => {
+        google.script.run
+          .withSuccessHandler(function(imgArray) {
+            galleryCache[employee.id] = imgArray;
+            loadedCount++;
+            console.log(`Loaded ${employee.name}: ${imgArray.length} images (${loadedCount}/${totalItems})`);
+            
+            if (employee.id === currentEmployee) {
+              renderGallery(imgArray);
+            }
+            
+            updateExportButton();
+          })
+          .withFailureHandler(function(error) {
+            console.error(`Error loading employee ${employee.name}:`, error);
+            galleryCache[employee.id] = [];
+            loadedCount++;
+          })
+          .getImages(employee.id);
+      });
+    }
+  });
+}
+
+function updateExportButton() {
+  const currentCacheKey = currentEmployee || currentGallery;
+  if (currentCacheKey && galleryCache[currentCacheKey] && galleryCache[currentCacheKey].length > 0) {
+    document.getElementById('exportPDF').style.display = 'flex';
+  }
+}
+
+// Image loading and gallery rendering
+function renderGallery(imgArray) {
+  images = imgArray;
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  
+  if (!imgArray || imgArray.length === 0) {
+    const currentName = currentEmployee ? getEmployeeName(currentEmployee) : getGalleryName(currentGallery);
+    gallery.innerHTML = `
+      <div style="
+        text-align: center;
+        color: var(--gray-medium);
+        padding: 60px 20px;
+        font-size: 16px;
+        border-radius: 12px;
+        background: #f9f9f9;
+        border: 1px solid var(--border);
+        margin: 40px auto;
+        max-width: 400px;
+      ">
+        <div style="margin-bottom: 12px; font-size: 24px;">📁</div>
+        ${currentName ? `Đang tải ảnh cho ${currentName}...` : 'Không có ảnh trong thư mục này'}
+      </div>
+    `;
+    document.getElementById('exportPDF').style.display = 'none';
     return;
   }
   
-  imgArr.forEach((url, idx) => {
-    const div = document.createElement('div');
-    div.className = 'img-card';
-    div.innerHTML = `<img src="${url}" alt="image" loading="lazy"/>`;
-    div.addEventListener('click', function() {
-      openImageModal(idx);
+  imgArray.forEach((imageUrl, index) => {
+    const imgCard = document.createElement('div');
+    imgCard.className = 'img-card';
+    imgCard.innerHTML = `<img src="${imageUrl}" alt="Biểu đồ ${index + 1}" loading="lazy"/>`;
+    
+    imgCard.addEventListener('click', function() {
+      openImageModal(index);
     });
-    gal.appendChild(div);
+    
+    gallery.appendChild(imgCard);
   });
   
-  document.getElementById('exportPDF').style.display = "flex";
+  // Show export button
+  document.getElementById('exportPDF').style.display = 'flex';
 }
 
-function openImageModal(idx) {
-  currentIdx = idx;
+// Image modal management
+function openImageModal(index) {
+  currentIdx = index;
   const modal = document.getElementById('modal');
   const modalImg = document.getElementById('modalImg');
-  if (modal && modalImg && images[idx]) {
-    modalImg.src = images[idx];
+  
+  if (modal && modalImg && images[index]) {
+    modalImg.src = images[index];
     modal.classList.add('open');
     updateArrowBtns();
     document.body.style.overflow = 'hidden';
   }
 }
 
-function hideModal(e) {
-  if (e.target.id === "modal" || e.target.classList.contains('modal-img')) {
+function hideModal(event) {
+  if (event.target.id === 'modal' || event.target.classList.contains('modal-img')) {
     document.getElementById('modal').classList.remove('open');
     document.body.style.overflow = 'auto';
   }
 }
 
-function nextImg(e) {
-  if (e) e.stopPropagation();
-  if (currentIdx < images.length - 1) openImageModal(currentIdx + 1);
+function nextImg(event) {
+  if (event) event.stopPropagation();
+  if (currentIdx < images.length - 1) {
+    openImageModal(currentIdx + 1);
+  }
 }
 
-function prevImg(e) {
-  if (e) e.stopPropagation();
-  if (currentIdx > 0) openImageModal(currentIdx - 1);
+function prevImg(event) {
+  if (event) event.stopPropagation();
+  if (currentIdx > 0) {
+    openImageModal(currentIdx - 1);
+  }
 }
 
 function updateArrowBtns() {
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
-  if (prevBtn) prevBtn.style.display = currentIdx === 0 ? 'none' : 'flex';
-  if (nextBtn) nextBtn.style.display = currentIdx === images.length - 1 ? 'none' : 'flex';
+  
+  if (prevBtn) {
+    prevBtn.style.display = currentIdx === 0 ? 'none' : 'flex';
+  }
+  if (nextBtn) {
+    nextBtn.style.display = currentIdx === images.length - 1 ? 'none' : 'flex';
+  }
 }
 
-document.addEventListener('keydown', function(e) {
+// Initialize gallery
+function initGallery() {
+  google.script.run
+    .withSuccessHandler(function(galleries) {
+      galleryList = galleries;
+      
+      if (!galleryList || galleryList.length === 0) {
+        document.getElementById('galleryNav').innerHTML = `
+          <div style="color: var(--gray-medium); padding: 10px;">
+            Không có gallery nào
+          </div>
+        `;
+        return;
+      }
+      
+      currentGallery = galleryList[0].id;
+      currentEmployee = null;
+      renderGalleryNav();
+      updateMenuActive();
+      
+      // Load all galleries at once
+      loadAllGalleries();
+    })
+    .withFailureHandler(function(error) {
+      console.error('Error loading gallery list:', error);
+      document.getElementById('galleryNav').innerHTML = `
+        <div style="color: #dc3545; padding: 10px;">
+          Lỗi tải danh sách gallery
+        </div>
+      `;
+    })
+    .getGalleryList();
+}
+
+// PDF Export functionality
+function setupPDFExport() {
+  const exportBtn = document.getElementById('exportPDF');
+  
+  if (exportBtn) {
+    exportBtn.onclick = async function() {
+      if (!images || images.length === 0) {
+        alert('Không có ảnh để xuất PDF!');
+        return;
+      }
+      
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 15;
+        
+        // Add title
+        pdf.setFontSize(20);
+        const title = currentEmployee ? 
+          `HMSG P.KD - ${getEmployeeName(currentEmployee)}` : 
+          `HMSG P.KD - ${getGalleryName(currentGallery)}`;
+        pdf.text(title, pageWidth/2, 25, {align: 'center'});
+        
+        let yPosition = 40;
+        
+        for (let i = 0; i < images.length; i++) {
+          if (i > 0) {
+            pdf.addPage();
+            yPosition = 25;
+          }
+          
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = images[i];
+          });
+          
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          
+          const imgData = canvas.toDataURL('image/jpeg', 0.8);
+          
+          const maxWidth = pageWidth - (margin * 2);
+          const maxHeight = pageHeight - yPosition - margin;
+          
+          const aspectRatio = img.width / img.height;
+          let imgWidth = maxWidth;
+          let imgHeight = imgWidth / aspectRatio;
+          
+          if (imgHeight > maxHeight) {
+            imgHeight = maxHeight;
+            imgWidth = imgHeight * aspectRatio;
+          }
+          
+          const xPosition = (pageWidth - imgWidth) / 2;
+          
+          pdf.addImage(imgData, 'JPEG', xPosition, yPosition, imgWidth, imgHeight);
+        }
+        
+        const fileName = currentEmployee ? 
+          `HMSG_PKD_${getEmployeeName(currentEmployee)}_${new Date().getTime()}.pdf` :
+          `HMSG_PKD_${getGalleryName(currentGallery)}_${new Date().getTime()}.pdf`;
+        pdf.save(fileName);
+        
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Có lỗi xảy ra khi tạo PDF. Vui lòng thử lại.');
+      }
+    };
+  }
+}
+
+// Keyboard events
+document.addEventListener('keydown', function(event) {
   const modal = document.getElementById('modal');
-  if (!modal || !modal.classList.contains('open')) return;
-  if (e.key === 'ArrowRight') nextImg(e);
-  if (e.key === 'ArrowLeft') prevImg(e);
-  if (e.key === 'Escape') {
-    modal.classList.remove('open');
-    document.body.style.overflow = 'auto';
+  
+  if (modal && modal.classList.contains('open')) {
+    switch(event.key) {
+      case 'ArrowRight':
+        nextImg(event);
+        break;
+      case 'ArrowLeft':
+        prevImg(event);
+        break;
+      case 'Escape':
+        modal.classList.remove('open');
+        document.body.style.overflow = 'auto';
+        break;
+    }
   }
 });
 
+// Initialize everything when DOM is loaded
 window.addEventListener('DOMContentLoaded', function() {
   initGallery();
+  setupPDFExport();
 });
-
-// PDF Export
-const exportBtn = document.getElementById('exportPDF');
-if (exportBtn) {
-  exportBtn.onclick = async function() {
-    // Add clicked animation
-    exportBtn.classList.add('clicked');
-    setTimeout(() => exportBtn.classList.remove('clicked'), 100);
-    
-    if (!images.length) return alert("Không có ảnh để xuất PDF!");
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 12;
-    pdf.setFontSize(18);
-    pdf.text("HMSG PKD", pageWidth/2, 20, {align:"center"});
-    pdf.setFontSize(10);
-    let yStart = 32;
-    for (let i = 0; i < images.length; i += 2) {
-      if (i !== 0) pdf.addPage();
-      let y = yStart;
-      for (let j = 0; j < 2 && (i + j) < images.length; j++) {
-        const img = new Image();
-        img.src = images[i + j];
-        await new Promise(resolve => { img.onload = resolve; });
-        const availHeight = (pageHeight - yStart - margin) / 2 - margin/2;
-        const availWidth = pageWidth - 2 * margin;
-        let ratio = Math.min(availWidth / img.width, availHeight / img.height, 1);
-        let w = img.width * ratio;
-        let h = img.height * ratio;
-        let x = (pageWidth - w) / 2;
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        const dataUrl = canvas.toDataURL("image/png");
-        pdf.addImage(dataUrl, "PNG", x, y, w, h);
-        y += h + margin;
-      }
-    }
-    pdf.save('gallery.pdf');
-  };
-}
 </script>
