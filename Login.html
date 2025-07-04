@@ -374,7 +374,16 @@
             
             // Update title if we have user info
             if (res.user && res.user.tenNhanVien) {
-              title.textContent = `Xin chào, ${res.user.tenNhanVien}!`;
+              const hour = new Date().getHours();
+              let timeGreeting;
+              if (hour < 12) {
+                timeGreeting = "Chào buổi sáng";
+              } else if (hour < 18) {
+                timeGreeting = "Chào buổi chiều";
+              } else {
+                timeGreeting = "Chào buổi tối";
+              }
+              title.textContent = `${timeGreeting}, ${res.user.tenNhanVien}! 🌟`;
             }
             
             // COMPLETELY hide the form (not just fade)
