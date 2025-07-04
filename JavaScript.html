@@ -452,9 +452,60 @@ document.addEventListener('keydown', function(event) {
   }
 });
 
+// Greeting functionality
+function getTimeBasedGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return "Chào buổi sáng";
+  } else if (hour < 18) {
+    return "Chào buổi chiều";
+  } else {
+    return "Chào buổi tối";
+  }
+}
+
+function showWelcomeGreeting() {
+  // Get current user info from the page
+  const userName = document.getElementById('dropdownUserName')?.textContent;
+  if (userName && userName.trim()) {
+    const greeting = getTimeBasedGreeting();
+    const welcomeMessage = `${greeting}, ${userName}! 👋`;
+    
+    // Create and show a temporary welcome notification
+    const welcomeDiv = document.createElement('div');
+    welcomeDiv.className = 'welcome-greeting';
+    welcomeDiv.innerHTML = `
+      <div class="welcome-content">
+        <span class="welcome-icon">🌟</span>
+        <span class="welcome-text">${welcomeMessage}</span>
+      </div>
+    `;
+    
+    document.body.appendChild(welcomeDiv);
+    
+    // Animate in
+    setTimeout(() => {
+      welcomeDiv.classList.add('show');
+    }, 100);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+      welcomeDiv.classList.remove('show');
+      setTimeout(() => {
+        if (welcomeDiv.parentNode) {
+          welcomeDiv.parentNode.removeChild(welcomeDiv);
+        }
+      }, 300);
+    }, 4000);
+  }
+}
+
 // Initialize everything when DOM is loaded
 window.addEventListener('DOMContentLoaded', function() {
   initGallery();
   setupPDFExport();
+  
+  // Show welcome greeting after a short delay to ensure user info is loaded
+  setTimeout(showWelcomeGreeting, 1500);
 });
 </script>

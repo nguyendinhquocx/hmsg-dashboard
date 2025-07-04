@@ -30,6 +30,7 @@
           <div class="dropdown-menu" id="profileDropdown" role="menu">
             <!-- Thêm thông tin user vào đầu dropdown -->
             <div class="dropdown-user-info" id="dropdownUserInfo">
+              <div class="dropdown-greeting" id="dropdownGreeting"></div>
               <div class="dropdown-user-name" id="dropdownUserName"></div>
               <div class="dropdown-user-email" id="dropdownUserEmail"></div>
             </div>
@@ -136,6 +137,18 @@
         google.script.run.withSuccessHandler(function(user){
           if(!user) return;
           document.getElementById('userProfileBox').style.display = 'flex';
+          
+          // Add time-based greeting
+          const hour = new Date().getHours();
+          let greeting;
+          if (hour < 12) {
+            greeting = "Chào buổi sáng! ☀️";
+          } else if (hour < 18) {
+            greeting = "Chào buổi chiều! 🌤️";
+          } else {
+            greeting = "Chào buổi tối! 🌙";
+          }
+          document.getElementById('dropdownGreeting').textContent = greeting;
           
           // Cập nhật thông tin trong dropdown thay vì header
           document.getElementById('dropdownUserName').textContent = user['ten nhan vien'] || '';

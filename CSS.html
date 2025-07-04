@@ -308,6 +308,14 @@ body {
   background: var(--gray-light);
 }
 
+.dropdown-greeting {
+  font-size: 13px;
+  color: var(--active-color);
+  margin-bottom: 8px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
 .dropdown-user-name {
   font-size: 14px;
   font-weight: 500;
@@ -808,6 +816,67 @@ body {
   
   .ksk-link-btn::after {
     display: none;
+  }
+}
+
+/* === WELCOME GREETING === */
+.welcome-greeting {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease-out;
+  pointer-events: none;
+}
+
+.welcome-greeting.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.welcome-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  min-width: 280px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.welcome-icon {
+  font-size: 20px;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.welcome-text {
+  flex: 1;
+}
+
+@keyframes sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(5deg); }
+}
+
+@media (max-width: 768px) {
+  .welcome-greeting {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .welcome-content {
+    min-width: auto;
+    padding: 12px 16px;
+    font-size: 14px;
   }
 }
 </style>
